@@ -1,7 +1,13 @@
 import React, { useEffect, useState } from "react";
 import HeaderSection from "@/components/HeaderSection";
 import { MaterialIcons } from "@expo/vector-icons";
-import { View, Text, ActivityIndicator, ScrollView, Animated } from "react-native";
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  ScrollView,
+  Animated,
+} from "react-native";
 import CustomButton from "@/components/CustomButton";
 import { getYAxisLabelSuffix, getMaxValue } from "@/hooks/deviceFunctions";
 import RealTimeReading from "@/components/RealTimeReading";
@@ -31,6 +37,7 @@ import {
   CompostData,
   AllSavedDataProp,
 } from "@/hooks/APICallTypes";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const Device = () => {
   const [deviceData, setDeviceData] = useState<APIDataProp | null>(null);
@@ -71,7 +78,7 @@ const Device = () => {
   console.log("saved time", savedTimeFrameData.length);
   console.log("solar data: ", allSavedData.solar.length);
   console.log("teg data: ", allSavedData.teg.length);
-  console.log("compost1: ", allSavedData.compostOne);
+  console.log("compost1: ", allSavedData.compostOne.length);
   console.log("compost2: ", allSavedData.compostTwo.length);
   console.log("________________END____________________");
 
@@ -177,7 +184,8 @@ const Device = () => {
 
   useEffect(() => {
     // *** KEY CHANGE: Filter from pre-processed allSavedData ***
-    if (selectedTime && savedTimeFrameData && dataProcessed) { // Ensure data is processed
+    if (selectedTime && savedTimeFrameData && dataProcessed) {
+      // Ensure data is processed
       setIsLoading(true); // Set loading to true when filtering starts
 
       // No need to call filterAndFormatAllData again!
@@ -369,190 +377,192 @@ const Device = () => {
   };
 
   return (
-    <ScrollView className="flex-1">
-      <HeaderSection
-        headerText="Device"
-        title="User"
-        onPressToggle={() => console.log("Device")}
-      />
+    <SafeAreaView className="flex-1">
       <ScrollView className="flex-1">
-        <View className="w-full flex justify-center items-center">
-          {/* Device Number */}
-          <View className="w-[92.5%] py-3 flex-row border-b-2 flex justify-between items-center mt-4">
-            <View className="flex flex-row gap-4">
-              <MaterialIcons name="devices" size={24} color="black" />
-              <Text>{deviceNumber}</Text>
-            </View>
-            <CustomButton onPress={() => console.log("HELP")} title="HELP" />
-          </View>
-
-          {/* Device Data Buttons */}
-          <View>
-            <View className="w-[72.5%] py-2 flex-row flex justify-between items-center mt-2 gap-2">
-              <CustomButton
-                onPress={handleDeviceEnergyClick}
-                title="Energy Data"
-                textStyles="text-[8px] font-bold"
-                containerStyles={`w-[40%] p-2 align-center border-[0.5px] ${
-                  isDeviceEnergySelected
-                    ? "border-green-600 bg-green-100"
-                    : "border-gray-400"
-                }`}
-              />
-              <CustomButton
-                onPress={handleDeviceCompostClick}
-                title="Compost Data"
-                textStyles="text-[8px] font-bold"
-                containerStyles={`w-[40%] p-2 align-center border-[0.5px] ${
-                  isDeviceCompostSelected
-                    ? "border-green-600 bg-green-100"
-                    : "border-gray-400"
-                }`}
-              />
+        <HeaderSection
+          headerText="Device"
+          title="User"
+          onPressToggle={() => console.log("Device")}
+        />
+        <ScrollView className="flex-1">
+          <View className="w-full flex justify-center items-center">
+            {/* Device Number */}
+            <View className="w-[92.5%] py-3 flex-row border-b-2 flex justify-between items-center mt-4">
+              <View className="flex flex-row gap-4">
+                <MaterialIcons name="devices" size={24} color="black" />
+                <Text>{deviceNumber}</Text>
+              </View>
+              <CustomButton onPress={() => console.log("HELP")} title="HELP" />
             </View>
 
-            {/* Time Period Buttons */}
-            <View className="w-[72.5%] pb-3 flex-row flex justify-between items-center">
-              {["Day", "Week", "Month"].map((time) => (
+            {/* Device Data Buttons */}
+            <View>
+              <View className="w-[72.5%] py-2 flex-row flex justify-between items-center mt-2 gap-2">
                 <CustomButton
-                  key={time}
-                  onPress={() => handleTimeClick(time)}
-                  title={time}
+                  onPress={handleDeviceEnergyClick}
+                  title="Energy Data"
                   textStyles="text-[8px] font-bold"
-                  containerStyles={`w-1/4 align-center p-2 border-[0.5px] ${
-                    selectedTime === time
+                  containerStyles={`w-[40%] p-2 align-center border-[0.5px] ${
+                    isDeviceEnergySelected
                       ? "border-green-600 bg-green-100"
                       : "border-gray-400"
-                  } ${
-                    !(isDeviceEnergySelected || isDeviceCompostSelected) &&
-                    "opacity-50 border-green-[0] bg-transparent"
                   }`}
-                  disabled={
-                    !(isDeviceEnergySelected || isDeviceCompostSelected)
-                  }
                 />
-              ))}
+                <CustomButton
+                  onPress={handleDeviceCompostClick}
+                  title="Compost Data"
+                  textStyles="text-[8px] font-bold"
+                  containerStyles={`w-[40%] p-2 align-center border-[0.5px] ${
+                    isDeviceCompostSelected
+                      ? "border-green-600 bg-green-100"
+                      : "border-gray-400"
+                  }`}
+                />
+              </View>
+
+              {/* Time Period Buttons */}
+              <View className="w-[72.5%] pb-3 flex-row flex justify-between items-center">
+                {["Day", "Week", "Month"].map((time) => (
+                  <CustomButton
+                    key={time}
+                    onPress={() => handleTimeClick(time)}
+                    title={time}
+                    textStyles="text-[8px] font-bold"
+                    containerStyles={`w-1/4 align-center p-2 border-[0.5px] ${
+                      selectedTime === time
+                        ? "border-green-600 bg-green-100"
+                        : "border-gray-400"
+                    } ${
+                      !(isDeviceEnergySelected || isDeviceCompostSelected) &&
+                      "opacity-50 border-green-[0] bg-transparent"
+                    }`}
+                    disabled={
+                      !(isDeviceEnergySelected || isDeviceCompostSelected)
+                    }
+                  />
+                ))}
+              </View>
             </View>
-          </View>
 
-          {/* Line Chart with Parameter Selection for Energy and Compost*/}
-          <View className="w-full flex-col">
-            {!isDeviceCompostSelected && !isDeviceEnergySelected && (
-              <View className="w-full h-[350px] justify-center items-center ">
-                <Text className="font-semibold">Select A Parameter</Text>
-              </View>
-            )}
-
-            {!dataProcessed && (
-              <View className="w-full flex-col ">
-                <View className="w-full h-[475px] min-h-[475px] rounded-md justify-center items-center">
-                  <Text>Processing...</Text>
-                  <ActivityIndicator color={"#DE0F3F"} size={"small"} />
+            {/* Line Chart with Parameter Selection for Energy and Compost*/}
+            <View className="w-full flex-col">
+              {!isDeviceCompostSelected && !isDeviceEnergySelected && (
+                <View className="w-full h-[350px] justify-center items-center ">
+                  <Text className="font-semibold">Select A Parameter</Text>
                 </View>
-              </View>
-            )}
-
-            {isLoading && (
-              <View className="w-full flex-col ">
-                <View className="w-full h-[475px] min-h-[475px] rounded-md justify-center items-center">
-                  <ActivityIndicator color={"#DE0F3F"} size={"small"} />
-                </View>
-              </View>
-            )}
-
-            {/* For The LineGraph */}
-            {(isDeviceCompostSelected || isDeviceEnergySelected) &&
-              dataProcessed && (
-                <LineGraphDataVisual
-                  selectedTime={selectedTime}
-                  lengthChecker={lengthChecker}
-                  isLoading={isLoading}
-                  isDeviceCompostSelected={isDeviceCompostSelected}
-                  isDeviceEnergySelected={isDeviceEnergySelected}
-                  chartDataSolar={chartDataSolarMemo}
-      chartDataTeg={chartDataTegMemo}
-      chartDataCompost1={chartDataCompost1Memo}
-      chartDataCompost2={chartDataCompost2Memo}
-                  selectedParameter={selectedParameter}
-                  getMaxValue={getMaxValue}
-                  getYAxisLabelSuffix={getYAxisLabelSuffix}
-                  handleParameterChange={handleParameterChange}
-                />
               )}
-          </View>
 
-          {/* Reading for Power*/}
-          <View className="w-full justify-center items-center">
-            <View className="w-[92.5%] flex-row  justify-between items-center">
-              <View className="flex-1 flex-row justify-between items-center">
-                <CustomButton
-                  onPress={(title) => {
-                    if (!title) return;
-                    selectReading(title);
-                  }}
-                  title="Solar"
-                  textStyles="text-[8px] font-bold"
-                  containerStyles={`flex-1 py-4 align-center border-x-2 rounded-none`}
-                />
-                <CustomButton
-                  onPress={(title) => {
-                    if (!title) return;
-                    selectReading(title);
-                  }}
-                  title="TEG"
-                  textStyles="text-[8px] font-bold"
-                  containerStyles={`flex-1 py-4 align-center border-r-2 rounded-none`}
-                />
-                <CustomButton
-                  onPress={(title) => {
-                    if (!title) return;
-                    selectReading(title);
-                  }}
-                  title="Battery"
-                  textStyles="text-[8px] font-bold"
-                  containerStyles={`flex-1 py-4 align-center border-r-2 rounded-none`}
-                />
-                <CustomButton
-                  onPress={(title) => {
-                    if (!title) return;
-                    selectReading(title);
-                  }}
-                  title="Compost1"
-                  textStyles="text-[8px] font-bold"
-                  containerStyles={`flex-1 py-4 align-center border-r-2 rounded-none`}
-                />
-                <CustomButton
-                  onPress={(title) => {
-                    if (!title) return;
-                    selectReading(title);
-                  }}
-                  title="Compost2"
-                  textStyles="text-[8px] font-bold"
-                  containerStyles={`flex-1 py-4 align-center border-r-2 rounded-none`}
-                />
-              </View>
+              {!dataProcessed && (
+                <View className="w-full flex-col ">
+                  <View className="w-full h-[475px] min-h-[475px] rounded-md justify-center items-center">
+                    <Text>Processing...</Text>
+                    <ActivityIndicator color={"#DE0F3F"} size={"small"} />
+                  </View>
+                </View>
+              )}
+
+              {isLoading && (
+                <View className="w-full flex-col ">
+                  <View className="w-full h-[475px] min-h-[475px] rounded-md justify-center items-center">
+                    <ActivityIndicator color={"#DE0F3F"} size={"small"} />
+                  </View>
+                </View>
+              )}
+
+              {/* For The LineGraph */}
+              {(isDeviceCompostSelected || isDeviceEnergySelected) &&
+                dataProcessed && (
+                  <LineGraphDataVisual
+                    selectedTime={selectedTime}
+                    lengthChecker={lengthChecker}
+                    isLoading={isLoading}
+                    isDeviceCompostSelected={isDeviceCompostSelected}
+                    isDeviceEnergySelected={isDeviceEnergySelected}
+                    chartDataSolar={chartDataSolarMemo}
+                    chartDataTeg={chartDataTegMemo}
+                    chartDataCompost1={chartDataCompost1Memo}
+                    chartDataCompost2={chartDataCompost2Memo}
+                    selectedParameter={selectedParameter}
+                    getMaxValue={getMaxValue}
+                    getYAxisLabelSuffix={getYAxisLabelSuffix}
+                    handleParameterChange={handleParameterChange}
+                  />
+                )}
             </View>
-            {/* Power and Compost Reading */}
-            <View className="w-[92.5%] flex-col mt-2 border-2 rounded-md">
-              <View className="flex-1 flex-row border-b-2  p-4">
-                <MaterialIcons name="devices" size={24} color="black" />
-                <Text className="text-center font-bold">
-                  {" "}
-                  Device Reading / 10min:{" "}
-                </Text>
-                {/* <View className="flex-row gap-2">
+
+            {/* Reading for Power*/}
+            <View className="w-full justify-center items-center">
+              <View className="w-[92.5%] flex-row  justify-between items-center">
+                <View className="flex-1 flex-row justify-between items-center">
+                  <CustomButton
+                    onPress={(title) => {
+                      if (!title) return;
+                      selectReading(title);
+                    }}
+                    title="Solar"
+                    textStyles="text-[8px] font-bold"
+                    containerStyles={`flex-1 py-4 align-center border-x-2 rounded-none`}
+                  />
+                  <CustomButton
+                    onPress={(title) => {
+                      if (!title) return;
+                      selectReading(title);
+                    }}
+                    title="TEG"
+                    textStyles="text-[8px] font-bold"
+                    containerStyles={`flex-1 py-4 align-center border-r-2 rounded-none`}
+                  />
+                  <CustomButton
+                    onPress={(title) => {
+                      if (!title) return;
+                      selectReading(title);
+                    }}
+                    title="Battery"
+                    textStyles="text-[8px] font-bold"
+                    containerStyles={`flex-1 py-4 align-center border-r-2 rounded-none`}
+                  />
+                  <CustomButton
+                    onPress={(title) => {
+                      if (!title) return;
+                      selectReading(title);
+                    }}
+                    title="Compost1"
+                    textStyles="text-[8px] font-bold"
+                    containerStyles={`flex-1 py-4 align-center border-r-2 rounded-none`}
+                  />
+                  <CustomButton
+                    onPress={(title) => {
+                      if (!title) return;
+                      selectReading(title);
+                    }}
+                    title="Compost2"
+                    textStyles="text-[8px] font-bold"
+                    containerStyles={`flex-1 py-4 align-center border-r-2 rounded-none`}
+                  />
+                </View>
+              </View>
+              {/* Power and Compost Reading */}
+              <View className="w-[92.5%] flex-col mt-2 border-2 rounded-md">
+                <View className="flex-1 flex-row border-b-2  p-4">
+                  <MaterialIcons name="devices" size={24} color="black" />
+                  <Text className="text-center font-bold">
+                    {" "}
+                    Device Reading / 10min:{" "}
+                  </Text>
+                  {/* <View className="flex-row gap-2">
                   <Text> 20W</Text>
                 </View> */}
+                </View>
+                <RealTimeReading
+                  selectedReading={selectedReading}
+                  realTimeData={realTimeData}
+                />
               </View>
-              <RealTimeReading
-                selectedReading={selectedReading}
-                realTimeData={realTimeData}
-              />
             </View>
           </View>
-        </View>
+        </ScrollView>
       </ScrollView>
-    </ScrollView>
+    </SafeAreaView>
   );
 };
 

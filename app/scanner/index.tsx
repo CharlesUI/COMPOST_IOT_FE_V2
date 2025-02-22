@@ -1,21 +1,24 @@
-import { Camera, CameraView } from "expo-camera";
-import { Stack } from "expo-router";
-import { useRef, useEffect, useState } from "react";
-import { useRouter } from "expo-router";
+import React, { useRef, useEffect, useState } from 'react';
+import { Camera, CameraView } from 'expo-camera';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import {
   AppState,
   Linking,
   Platform,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
   Dimensions,
   View,
-  Alert
-} from "react-native";
-import { Canvas, DiffRect, rect, rrect } from "@shopify/react-native-skia";
+  Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { TouchableOpacity, Text } from 'react-native';
+import { Canvas, DiffRect, rect, rrect } from '@shopify/react-native-skia';
+import { DeviceTextProp } from '../(tabs)';
+import { useAddedDeviceContext } from '@/context/useAddedDeviceContext';
 
-const { width, height } = Dimensions.get("window");
+const { width, height } = Dimensions.get('window');
 
 const innerDimension = 300;
 
@@ -31,79 +34,140 @@ const inner = rrect(
   50
 );
 
+const validDeviceIds = ["CMPST10923", "CMPST18276", "CMPST19284"];
+
+
 export default function Home() {
+  const { addedDevices, setAddedDevices } = useAddedDeviceContext(); // Access the context
+
   const qrLock = useRef(false);
   const appState = useRef(AppState.currentState);
-  const [cameraView, setCameraView] = useState<CameraView | null>(null);
-  const router = useRouter(); // Initialize router
+  const router = useRouter();
 
-  const [scanMessage, setScanMessage] = useState("Scanning...");
+  const [scanMessage, setScanMessage] = useState('Scanning...');
+  const [cameraReady, setCameraReady] = useState(false);
 
+  const [hasScanned, setHasScanned] = useState(false);
 
   useEffect(() => {
-    const subscription = AppState.addEventListener("change", (nextAppState) => {
-      if (
-        appState.current.match(/inactive|background/) &&
-        nextAppState === "active"
-      ) {
-        qrLock.current = false;
-      }
-      appState.current = nextAppState;
-    });
+    setHasScanned(false); // Reset on component mount and cameraReady change
+    qrLock.current = false;
+  }, [cameraReady]);
 
-    return () => {
-      subscription.remove();
-    };
-  }, []);
+  const handleBarcodeScanned = ({ data }: any) => {  // No need for any type here
+    if (data && cameraReady && !hasScanned) {
+      setHasScanned(true);
+      qrLock.current = true;
+
+      if (!validDeviceIds.includes(data)) {
+        Alert.alert("Error", "Invalid QR Code.");
+        router.back(); // Exit immediately on invalid code
+        return; // Important: Return to prevent further execution
+      }
+
+      Alert.alert("QR Code Result", data, [
+        {
+          text: "OK",
+          onPress: () => {
+            const newDevice: DeviceTextProp = {
+              id: Math.random().toString(),
+              deviceId: data, // Use the scanned data as the deviceId
+            };
+  
+            setAddedDevices((prevDevices) => {
+              return prevDevices ? [...prevDevices, newDevice] : [newDevice];
+            });
+            router.push("/Device"); // Navigate to Device Tab
+          },
+        },
+      ]);
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      {Platform.OS === "android" ? <StatusBar hidden /> : null}
-      <CameraView
-        style={StyleSheet.absoluteFillObject}
-        facing="back"
-        onBarcodeScanned={({ data }) => {
-          if (data && !qrLock.current) {
-              qrLock.current = true;
-              setScanMessage("QR Code Scanned!");
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        {Platform.OS === 'android' ? <StatusBar hidden /> : null}
+        <CameraView
+          style={styles.camera}
+          facing="back"
+          onCameraReady={() => setCameraReady(true)}
+          onBarcodeScanned={handleBarcodeScanned}
+        />
 
-              setTimeout(async () => {
-                  console.log("data", data);
-                  try {
-                      // 1. Alert the user:
-                      Alert.alert("QR Code Result", data, [
-                          {
-                              text: "OK",
-                              onPress: () => {
-                                  // 2. Close the scanner screen:
-                                  router.back(); // Use router.back() to navigate back
-                              },
-                          },
-                      ]);
-                  } catch (error) {
-                      console.error("Error opening URL or displaying alert:", error);
-                      Alert.alert("Error", "Could not process the QR code."); // Alert for error
-                  }
-                  setScanMessage("Scanning...");
-              }, 500);
-          }
-      }}
-      />
-      <Canvas
-        style={
-          Platform.OS === "android"
-            ? { flex: 1 }
-            : StyleSheet.absoluteFillObject
-        }
-      >
-        <DiffRect inner={inner} outer={outer} color="black" opacity={0.5} />
-      </Canvas>
-    </View>
+        {cameraReady && (
+          <View style={styles.overlay}>
+            <View style={styles.header}>
+              <Text style={styles.headerText}>Scan a CompostIoT Device</Text>
+            </View>
+
+            <Canvas style={styles.canvas}>
+              <DiffRect inner={inner} outer={outer} color="black" opacity={0.5} />
+            </Canvas>
+
+            <View style={styles.footer}>
+              <TouchableOpacity
+                style={styles.exitButton}
+                onPress={() => router.back()}
+              >
+                <Ionicons name="close" size={32} color="white" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
   container: {
-    flex: 1, // Important: Use flex: 1 for the main container
+    flex: 1,
+  },
+  camera: {
+    flex: 1,
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    flexDirection: 'column',
+  },
+  canvas: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+  },
+  header: {
+    alignItems: 'center',
+    paddingTop: Platform.OS === 'android' ? 30 : 50,
+    paddingBottom: 20,
+  },
+  headerText: {
+    color: 'white',
+    fontSize: 17.5,
+    fontWeight: 'bold',
+    padding: 15,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 10,
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 20, // Adjust as needed
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  exitButton: {
+    borderRadius: 15, // Make it a circle
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 15,
   },
 });

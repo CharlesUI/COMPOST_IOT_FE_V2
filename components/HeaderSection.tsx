@@ -12,7 +12,7 @@ interface HeaderProps {
 
 const HeaderSection = ({headerText, title, onPressToggle}: HeaderProps) => {
   return (
-    <SafeAreaView className="flex flex-row h-22 bg-white justify-between items-center p-5">
+    <View className="flex flex-row justify-between items-center p-5">
       {/* Icon and Text aligned horizontally */}
       <View className="flex-row items-center">
         <MaterialIcons name="compost" size={40} color="black" />
@@ -28,7 +28,7 @@ const HeaderSection = ({headerText, title, onPressToggle}: HeaderProps) => {
           onPress={onPressToggle}
         ></CustomButton>
       </View>
-    </SafeAreaView>
+    </View>
   )
 }
 
