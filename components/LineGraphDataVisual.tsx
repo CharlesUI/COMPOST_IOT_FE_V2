@@ -1,8 +1,8 @@
 import { View, Text, Animated, ActivityIndicator } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
-import React from "react";
+import React, { useState } from "react";
 import CustomButton from "./CustomButton";
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import {
   format,
   startOfDay,
@@ -12,6 +12,7 @@ import {
   endOfWeek,
   endOfMonth,
 } from "date-fns"; // Import date-fns functions
+import PointerLabelComponent from "./PointerLabelComponent";
 
 interface LineGraphProps {
   selectedTime: string | undefined;
@@ -46,6 +47,8 @@ const LineGraphDataVisual = ({
   getYAxisLabelSuffix,
   handleParameterChange,
 }: LineGraphProps) => {
+  const [indicatorColor1, setIndicatorColor1] = useState("blue"); // State for indicator colors
+  const [indicatorColor2, setIndicatorColor2] = useState("red");
   const chartDateLabel = useMemo(() => {
     if (!selectedTime) return "";
     const today = new Date();
@@ -75,10 +78,6 @@ const LineGraphDataVisual = ({
       default:
         return "";
     }
-  }, [selectedTime]);
-
-  const xAxisLabelHeight = useMemo(() => {
-    return selectedTime === "Week" || selectedTime === "Month" ? 60 : 50; // Increased height for Week and Month
   }, [selectedTime]);
 
   const getReadingType = () => {
@@ -116,15 +115,77 @@ const LineGraphDataVisual = ({
     }
   }, [lengthChecker, isLoading, fadeAnim]);
 
+  useEffect(() => {
+    if (isDeviceEnergySelected) {
+      setIndicatorColor1("blue");
+      setIndicatorColor2("red");
+    } else if (isDeviceCompostSelected) {
+      setIndicatorColor1("blue");
+      setIndicatorColor2("red");
+    }
+  }, [isDeviceEnergySelected, isDeviceCompostSelected]); // Update on selection change
+
+  const lineChartColor = useMemo(() => {
+    // Memoize the color object
+    if (isDeviceEnergySelected) {
+      return {
+        lineColor1: "blue", // Solar
+        lineColor2: "red", // TEG
+        startFillColor1: "#8a56ce", // Solar
+        startFillColor2: "#56acce", // TEG
+        endFillColor1: "#8a56ce", // Solar
+        endFillColor2: "#56acce", // TEG
+      };
+    } else if (isDeviceCompostSelected) {
+      return {
+        lineColor1: "blue", // Compost 1
+        lineColor2: "red", // Compost 2
+        startFillColor1: "#8a56ce", // Compost 1
+        startFillColor2: "#56acce", // Compost 2
+        endFillColor1: "#8a56ce", // Compost 1
+        endFillColor2: "#56acce", // Compost 2
+      };
+    } else {
+      return {
+        lineColor1: "#07BAD1", // Default color if neither is selected
+        lineColor2: "orange",
+        startFillColor1: "#8a56ce",
+        startFillColor2: "#56acce",
+        endFillColor1: "#8a56ce",
+        endFillColor2: "#56acce",
+      };
+    }
+  }, [isDeviceEnergySelected, isDeviceCompostSelected]); // Dependency array is crucial
+
   return (
     <View className="flex-1 ">
       <View className="pb-4 flex-1">
         {selectedTime && lengthChecker && !isLoading && (
           <View>
-            <Text className="text-center font-bold text-md m-4">
-              {chartDateLabel}
-            </Text>
-            <View className="h-[360px] min-h-[360px] overflow-hidden">
+            <View className="w-full justify-center items-center">
+              <View className="w-[72.5%] flex-row justify-center items-center ">
+                <Text className="flex-1 text-start font-semibold text-md py-2">
+                  {chartDateLabel}
+                </Text>
+                <View className="flex-1 flex-col items-center justify-center ">
+                  <View className="w-full flex-row justify-end items-center">
+                    <Text className="font-semibold">{readingTypeLabels.data1Label}</Text>
+                    <View
+                      className="w-4 h-4 rounded-full ml-4"
+                      style={{ backgroundColor: indicatorColor1 }}
+                    />
+                  </View>
+                  <View className="w-full flex-row justify-end items-center">
+                    <Text className="font-semibold">{readingTypeLabels.data2Label}</Text>
+                    <View
+                      className="w-4 h-4 rounded-full ml-4" // Added margin
+                      style={{ backgroundColor: indicatorColor2 }}
+                    />
+                  </View>
+                </View>
+              </View>
+            </View>
+            <View className="h-[350px] min-h-[350px] overflow-hidden">
               {/* overflow-hidden to clip during fade */}
               <Animated.View style={{ opacity: fadeAnim }}>
                 {/* Animated.View for fade */}
@@ -140,12 +201,12 @@ const LineGraphDataVisual = ({
                         ? chartDataTeg
                         : chartDataCompost2
                     }
-                    color="#07BAD1"
-                    color2="orange"
+                    // color="#07BAD1"
+                    // color2="orange"
                     noOfSections={5}
-                    height={310}
+                    height={300}
                     showVerticalLines
-                    thickness={2}
+                    thickness={3}
                     initialSpacing={0}
                     spacing={75}
                     backgroundColor="transparent"
@@ -178,14 +239,23 @@ const LineGraphDataVisual = ({
                     yAxisTextStyle={{ fontSize: 8, fontWeight: "bold" }}
                     yAxisThickness={0}
                     hideDataPoints
-                    dataPointsColor1="blue"
-                    dataPointsColor2="red"
-                    startFillColor1="#8a56ce"
-                    startFillColor2="#56acce"
-                    endFillColor1="#8a56ce"
-                    endFillColor2="#56acce"
+                    // dataPointsColor1="blue"
+                    // dataPointsColor2="red"
+                    // startFillColor1="#8a56ce"
+                    // startFillColor2="#56acce"
+                    // endFillColor1="#8a56ce"
+                    // endFillColor2="#56acce"
                     startOpacity={0.8}
                     endOpacity={0.3}
+                    // color
+                    color={lineChartColor.lineColor1} // Use memoized color
+                    color2={lineChartColor.lineColor2} // Use memoized color
+                    dataPointsColor1={lineChartColor.lineColor1}
+                    dataPointsColor2={lineChartColor.lineColor2}
+                    startFillColor1={lineChartColor.startFillColor1}
+                    startFillColor2={lineChartColor.startFillColor2}
+                    endFillColor1={lineChartColor.endFillColor1}
+                    endFillColor2={lineChartColor.endFillColor2}
                     focusEnabled
                     showTextOnFocus
                     pointerConfig={{
@@ -199,78 +269,13 @@ const LineGraphDataVisual = ({
                       pointerLabelWidth: 90,
                       pointerLabelHeight: 1000,
                       autoAdjustPointerLabelPosition: false,
-                      pointerLabelComponent: (items: any) => {
-                        return (
-                          <View
-                            style={{
-                              height: 90,
-                              width: 120,
-                              justifyContent: "center",
-                              marginTop: -55,
-                              marginLeft: -40,
-                              alignItems: "center",
-                            }}
-                          >
-                            <Text
-                              style={{
-                                color: "black",
-                                fontWeight: "bold",
-                                fontSize: 12,
-                                marginBottom: 3,
-                                textAlign: "center",
-                              }}
-                            >
-                              {format(items[0]?.timeStamp, "dd/MM HH:mm")}
-                            </Text>
-
-                            <View
-                              style={{
-                                paddingHorizontal: 12,
-                                paddingVertical: 5,
-                                borderRadius: 12,
-                                backgroundColor: "white",
-                                marginBottom: 2,
-                              }}
-                            >
-                              <Text
-                                style={{
-                                  fontWeight: "bold",
-                                  textAlign: "center",
-                                  fontSize: 10,
-                                  color: "#07BAD1",
-                                }}
-                              >
-                                {readingTypeLabels.data1Label}:{" "}
-                                {items[0]?.value?.toFixed(2)}{" "}
-                                {getYAxisLabelSuffix(selectedParameter!)}
-                              </Text>
-                            </View>
-                            {items[1] && (
-                              <View
-                                style={{
-                                  paddingHorizontal: 12,
-                                  paddingVertical: 5,
-                                  borderRadius: 12,
-                                  backgroundColor: "white",
-                                }}
-                              >
-                                <Text
-                                  style={{
-                                    fontWeight: "bold",
-                                    textAlign: "center",
-                                    fontSize: 10,
-                                    color: "orange",
-                                  }}
-                                >
-                                  {readingTypeLabels.data2Label}:{" "}
-                                  {items[1]?.value?.toFixed(2)}{" "}
-                                  {getYAxisLabelSuffix(selectedParameter!)}
-                                </Text>
-                              </View>
-                            )}
-                          </View>
-                        );
-                      },
+                      pointerLabelComponent: (items: any) => (
+                        <PointerLabelComponent
+                          items={items}
+                          selectedParameter={selectedParameter}
+                          readingTypeLabels={readingTypeLabels}
+                        />
+                      ),
                     }}
                   />
                 ) : (
@@ -286,7 +291,7 @@ const LineGraphDataVisual = ({
             {/* Parameter Selection for Energy and Compost */}
             {(isDeviceEnergySelected || isDeviceCompostSelected) && (
               <View className="w-full justify-center items-center ">
-                <View className="w-[72.5%] pt-2 mt-4 flex-row flex justify-between items-center">
+                <View className="w-[72.5%] pt-2 flex-row flex justify-between items-center">
                   {(isDeviceEnergySelected
                     ? ["voltage", "current", "wattage"]
                     : ["methane", "moisture", "temperature"]
@@ -296,10 +301,10 @@ const LineGraphDataVisual = ({
                       onPress={() => handleParameterChange(param)}
                       title={param.charAt(0).toUpperCase() + param.slice(1)}
                       textStyles="text-[8px] font-bold"
-                      containerStyles={`w-1/4 py-2 align-center border-[0.5px] ${
+                      containerStyles={`w-1/4 py-2 align-center border-2 ${
                         selectedParameter === param
                           ? "border-green-600 bg-green-100"
-                          : "border-gray-400"
+                          : "border-gray-400 bg-white"
                       }`}
                     />
                   ))}

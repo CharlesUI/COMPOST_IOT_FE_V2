@@ -24,3 +24,4 @@ export const getMaxValue = (selectedParameter: string) => {
 
 
 
+

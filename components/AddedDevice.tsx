@@ -53,7 +53,7 @@ const AddedDevice = ({ addedDevices, setAddedDevices }: AddedDevicesProps) => {
           );
         }}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={{ flexGrow: 1 }}
+        // contentContainerStyle={{ flexGrow: 1 }}
       />
     </View>
   );

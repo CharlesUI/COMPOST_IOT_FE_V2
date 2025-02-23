@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity } from "react-native";
 import React from "react";
 
 interface CustomButtonProps {
-  onPress: (title?:string | undefined ) => void;
+  onPress: (title?: string | undefined) => void;
   title: string;
   textStyles?: string; // Accept Tailwind class strings for text styling
   containerStyles?: string; // Accept Tailwind class strings for container styling
@@ -19,9 +19,9 @@ const CustomButton = ({
   return (
     <TouchableOpacity
       disabled={disabled}
-      activeOpacity={0.7}
+      activeOpacity={1}
       onPress={() => onPress(title)}
-      className={`justify-center items-center rounded-md ${containerStyles}`}
+      className={`justify-center items-center rounded-md border-none ${containerStyles}`}
     >
       {title ? ( // Render Text only if `title` is valid
         <Text className={`text-black font-regular ${textStyles}`}>{title}</Text>

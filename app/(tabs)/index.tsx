@@ -1,19 +1,21 @@
 import { useCameraPermissions } from "expo-camera";
 import React, { useState } from "react";
-import HomeHeaderSection from "@/components/HomePage/HomeHeaderSection";
 import { View, Text, Pressable, TextInput, Alert } from "react-native";
 import CustomButton from "@/components/CustomButton";
-import { Link, useRouter } from "expo-router";
+import { useRouter, router } from "expo-router";
 import AddedDevice from "@/components/AddedDevice";
-import { goToUserLog } from "@/components/HomePage/HomeHeaderSection";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAddedDeviceContext } from '@/context/useAddedDeviceContext' // Import the hook
-
+import { useAddedDeviceContext } from "@/context/useAddedDeviceContext"; // Import the hook
+import HeaderSection from "@/components/HeaderSection";
 
 export interface DeviceTextProp {
   id: string;
   deviceId: string;
 }
+
+const goToUserLog = () => {
+  router.push("/(modal)/userLog");
+};
 
 const validDeviceIds = ["CMPST10923", "CMPST18276", "CMPST19284"]; // Array of valid device IDs
 
@@ -21,11 +23,7 @@ const HomePage = () => {
   const [permission, requestPermission] = useCameraPermissions();
   const [deviceText, setDeviceText] = useState<string>("");
   const { addedDevices, setAddedDevices } = useAddedDeviceContext(); // Access the context
-  // const [addedDevices, setAddedDevices] = useState<DeviceTextProp[] | null>(
-  //   null
-  // );
   const isPermissionGranted = Boolean(permission?.granted);
-
   const router = useRouter(); // Initialize router
 
   const handleScanQRCode = () => {
@@ -68,19 +66,24 @@ const HomePage = () => {
     setAddedDevices(addedDevices ? [...addedDevices, newDevice] : [newDevice]);
     setDeviceText("");
 
-    // Navigate to the Device tab (replace "/device" with your actual route)
     router.push("/Device"); // Or router.navigate("/device") depending on your expo-router version
   };
 
   return (
     <SafeAreaView className="flex-1">
-      <HomeHeaderSection />
+      <HeaderSection
+        headerText="Compost IoT"
+        title="Log In"
+        onPressToggle={goToUserLog}
+      />
       <View className="flex-1 bg-gray-200">
         <View className="w-full flex-row justify-between p-3 mt-5">
           <Text className=" font-semibold p-1">Compost Monitoring Server</Text>
-          <Pressable onPress={() => console.log("Go to HELP")}>
-            <Text className=" font-light p-1">HELP</Text>
-          </Pressable>
+          <CustomButton
+            onPress={() => console.log("HELP")}
+            title="HELP"
+            containerStyles="border-[0]"
+          />
         </View>
 
         <View className=" w-full flex justify-center items-center">
@@ -102,7 +105,7 @@ const HomePage = () => {
               </Pressable>
               <View className="flex justify-around">
                 <TextInput
-                  placeholder="#0SDFESKDSDFSM"
+                  placeholder="CMPST*****"
                   placeholderTextColor="gray"
                   value={deviceText}
                   onChangeText={(text) => setDeviceText(text)}
@@ -133,10 +136,12 @@ const HomePage = () => {
             <Text>No Added Device</Text>
           </View>
         ) : (
-          <AddedDevice
-            addedDevices={addedDevices}
-            setAddedDevices={setAddedDevices}
-          />
+          <View className="flex-1">
+            <AddedDevice
+              addedDevices={addedDevices}
+              setAddedDevices={setAddedDevices}
+            />
+          </View>
         )}
       </View>
     </SafeAreaView>

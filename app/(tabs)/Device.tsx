@@ -29,9 +29,8 @@ import {
 import { useMemo, useCallback, useRef } from "react";
 import data from "@/assets/data.json";
 
-const { debounce } = require("lodash"); // Import debounce from lodash - install if needed: npm install lodash.debounce
+const { debounce } = require("lodash");
 import {
-  TimeDataProp,
   APIDataProp,
   EnergyData,
   CompostData,
@@ -58,9 +57,7 @@ const Device = () => {
   const [selectedParameter, setSelectedParameter] = useState<
     string | undefined
   >("voltage");
-  const [selectedReading, setSelectedReading] = useState<string | null>(
-    "Battery"
-  );
+  const [selectedReading, setSelectedReading] = useState<string>("Battery");
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [dataProcessed, setDataProcessed] = useState(false); // Track data processing
@@ -155,7 +152,7 @@ const Device = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true); // Set loading to true when fetching starts
+      setIsLoading(true);
       try {
         const response: any = await new Promise((resolve) => {
           setTimeout(() => resolve(data), 500);
@@ -164,7 +161,7 @@ const Device = () => {
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
-        setIsLoading(false); // Ensure loading is set to false after fetch attempt
+        setIsLoading(false);
       }
     };
 
@@ -178,25 +175,21 @@ const Device = () => {
       setSavedTimeFrameData(deviceData.savedTimeFrameData);
       const allData = filterAndFormatAllData(deviceData.savedTimeFrameData);
       setAllSavedData(allData);
-      setDataProcessed(true); // Data processing complete
+      setDataProcessed(true);
     }
   }, [deviceData, filterAndFormatAllData]);
 
   useEffect(() => {
-    // *** KEY CHANGE: Filter from pre-processed allSavedData ***
     if (selectedTime && savedTimeFrameData && dataProcessed) {
-      // Ensure data is processed
-      setIsLoading(true); // Set loading to true when filtering starts
-
-      // No need to call filterAndFormatAllData again!
-      setIsLoading(false); // End loading after data is processed and set
+      setIsLoading(true);
+      setIsLoading(false); 
     }
   }, [selectedTime, savedTimeFrameData, dataProcessed]);
 
   const debouncedFilterData = useRef(
     debounce((time: string) => {
-      setIsLoading(true); // Start loading before data processing
-      setSelectedTime(time); // Set selectedTime immediately for UI update
+      setIsLoading(true); 
+      setSelectedTime(time);
 
       switch (time) {
         case "Day":
@@ -211,9 +204,8 @@ const Device = () => {
         default:
           setDownsampleInterval(10);
       }
-      // Data filtering and setting allSavedData will happen in the useEffect below
     }, 300)
-  ); // 300ms debounce delay
+  ); 
 
   useEffect(() => {
     if (selectedTime) {
@@ -259,7 +251,7 @@ const Device = () => {
         return itemDate >= startDate && itemDate <= endDate;
       });
 
-      let lastDay: Date | null = null; // Track the last day processed for separators
+      let lastDay: Date | null = null;
 
       return filteredData.map((item: any, index: number) => {
         const itemDate = parseISO(item.timestamp);
@@ -384,38 +376,42 @@ const Device = () => {
           title="User"
           onPressToggle={() => console.log("Device")}
         />
-        <ScrollView className="flex-1">
+        <ScrollView className="flex-1 bg-gray-200">
           <View className="w-full flex justify-center items-center">
             {/* Device Number */}
-            <View className="w-[92.5%] py-3 flex-row border-b-2 flex justify-between items-center mt-4">
+            <View className="w-[92.5%] py-3 flex-row border-b-2 flex justify-between items-center mt-2">
               <View className="flex flex-row gap-4">
-                <MaterialIcons name="devices" size={24} color="black" />
-                <Text>{deviceNumber}</Text>
+                <MaterialIcons name="devices" size={25} color="black" />
+                <Text className="font-semibold">{deviceNumber}</Text>
               </View>
-              <CustomButton onPress={() => console.log("HELP")} title="HELP" />
+              <CustomButton
+                onPress={() => console.log("HELP")}
+                title="HELP"
+                containerStyles="border-[0]"
+              />
             </View>
 
             {/* Device Data Buttons */}
-            <View>
-              <View className="w-[72.5%] py-2 flex-row flex justify-between items-center mt-2 gap-2">
+            <View className="w-full justify-center items-center">
+              <View className="w-[72.5%] py-2 flex-row flex justify-between items-center mt-2 gap-2 ">
                 <CustomButton
                   onPress={handleDeviceEnergyClick}
                   title="Energy Data"
                   textStyles="text-[8px] font-bold"
-                  containerStyles={`w-[40%] p-2 align-center border-[0.5px] ${
+                  containerStyles={`w-[40%] p-2 align-center border-2 ${
                     isDeviceEnergySelected
                       ? "border-green-600 bg-green-100"
-                      : "border-gray-400"
+                      : "border-gray-400 bg-white"
                   }`}
                 />
                 <CustomButton
                   onPress={handleDeviceCompostClick}
                   title="Compost Data"
                   textStyles="text-[8px] font-bold"
-                  containerStyles={`w-[40%] p-2 align-center border-[0.5px] ${
+                  containerStyles={`w-[40%] p-2 align-center border-2 ${
                     isDeviceCompostSelected
                       ? "border-green-600 bg-green-100"
-                      : "border-gray-400"
+                      : "border-gray-400 bg-white"
                   }`}
                 />
               </View>
@@ -428,13 +424,13 @@ const Device = () => {
                     onPress={() => handleTimeClick(time)}
                     title={time}
                     textStyles="text-[8px] font-bold"
-                    containerStyles={`w-1/4 align-center p-2 border-[0.5px] ${
+                    containerStyles={`w-1/4 align-center p-2 border-2 ${
                       selectedTime === time
                         ? "border-green-600 bg-green-100"
-                        : "border-gray-400"
+                        : "border-gray-400 bg-white"
                     } ${
                       !(isDeviceEnergySelected || isDeviceCompostSelected) &&
-                      "opacity-50 border-green-[0] bg-transparent"
+                      "opacity-50 border-green-4 bg-transparent"
                     }`}
                     disabled={
                       !(isDeviceEnergySelected || isDeviceCompostSelected)
@@ -492,71 +488,40 @@ const Device = () => {
 
             {/* Reading for Power*/}
             <View className="w-full justify-center items-center">
-              <View className="w-[92.5%] flex-row  justify-between items-center">
-                <View className="flex-1 flex-row justify-between items-center">
-                  <CustomButton
-                    onPress={(title) => {
-                      if (!title) return;
-                      selectReading(title);
-                    }}
-                    title="Solar"
-                    textStyles="text-[8px] font-bold"
-                    containerStyles={`flex-1 py-4 align-center border-x-2 rounded-none`}
-                  />
-                  <CustomButton
-                    onPress={(title) => {
-                      if (!title) return;
-                      selectReading(title);
-                    }}
-                    title="TEG"
-                    textStyles="text-[8px] font-bold"
-                    containerStyles={`flex-1 py-4 align-center border-r-2 rounded-none`}
-                  />
-                  <CustomButton
-                    onPress={(title) => {
-                      if (!title) return;
-                      selectReading(title);
-                    }}
-                    title="Battery"
-                    textStyles="text-[8px] font-bold"
-                    containerStyles={`flex-1 py-4 align-center border-r-2 rounded-none`}
-                  />
-                  <CustomButton
-                    onPress={(title) => {
-                      if (!title) return;
-                      selectReading(title);
-                    }}
-                    title="Compost1"
-                    textStyles="text-[8px] font-bold"
-                    containerStyles={`flex-1 py-4 align-center border-r-2 rounded-none`}
-                  />
-                  <CustomButton
-                    onPress={(title) => {
-                      if (!title) return;
-                      selectReading(title);
-                    }}
-                    title="Compost2"
-                    textStyles="text-[8px] font-bold"
-                    containerStyles={`flex-1 py-4 align-center border-r-2 rounded-none`}
-                  />
+              <View className="w-full flex-row  justify-center items-center pt-2 bg-white">
+                <View className="w-full gap-2 flex-row justify-between items-center bg-white px-[1px]">
+                  {["Solar", "TEG", "Battery", "Compost1", "Compost2"].map(
+                    (itemTitle) => (
+                      <CustomButton
+                        key={itemTitle}
+                        onPress={() => selectReading(itemTitle)}
+                        title={itemTitle}
+                        textStyles="text-[8px] font-bold"
+                        containerStyles={`flex-1 py-5 border-[0] align-center rounded-tr-md rounded-tl-md rounded-br-4 rounded-bl-4 ${
+                          selectedReading === itemTitle
+                            ? "border-green-600 bg-green-100 border-b-2"
+                            : "border-gray-400 bg-white"
+                        }`}
+                      />
+                    )
+                  )}
                 </View>
               </View>
               {/* Power and Compost Reading */}
-              <View className="w-[92.5%] flex-col mt-2 border-2 rounded-md">
-                <View className="flex-1 flex-row border-b-2  p-4">
-                  <MaterialIcons name="devices" size={24} color="black" />
-                  <Text className="text-center font-bold">
-                    {" "}
-                    Device Reading / 10min:{" "}
-                  </Text>
-                  {/* <View className="flex-row gap-2">
-                  <Text> 20W</Text>
-                </View> */}
+              <View className="w-full mt-[2px] py-2 justify-center items-center bg-white">
+                <View className="w-[92.5%] flex-col border-2 rounded-md">
+                  <View className="flex-1 flex-row border-b-2  p-4">
+                    <MaterialIcons name="devices" size={24} color="black" />
+                    <Text className="text-center font-bold">
+                      {" "}
+                      Device Reading / 10min:{" "}
+                    </Text>
+                  </View>
+                  <RealTimeReading
+                    selectedReading={selectedReading}
+                    realTimeData={realTimeData}
+                  />
                 </View>
-                <RealTimeReading
-                  selectedReading={selectedReading}
-                  realTimeData={realTimeData}
-                />
               </View>
             </View>
           </View>
