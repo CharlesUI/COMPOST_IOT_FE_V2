@@ -47,6 +47,7 @@ const LineGraphDataVisual = ({
   getYAxisLabelSuffix,
   handleParameterChange,
 }: LineGraphProps) => {
+
   const [indicatorColor1, setIndicatorColor1] = useState("blue"); // State for indicator colors
   const [indicatorColor2, setIndicatorColor2] = useState("red");
   const chartDateLabel = useMemo(() => {
@@ -66,19 +67,19 @@ const LineGraphDataVisual = ({
         startDate = startOfWeek(today);
         endDate = endOfWeek(today);
         formatString = "MM/dd/yyyy";
-        return `Week of ${format(startDate, formatString)} - ${format(
+        return `${format(startDate, formatString)} - ${format(
           endDate,
           formatString
         )}`;
       case "Month":
         startDate = startOfMonth(today);
         endDate = endOfMonth(today);
-        formatString = "MMMM yyyy"; // Changed format for month display
+        formatString = "MMMM"; // Changed format for month display
         return `Month of ${format(startDate, formatString)}`;
       default:
         return "";
     }
-  }, [selectedTime]);
+  }, [selectedTime, isDeviceEnergySelected, isDeviceCompostSelected]);
 
   const getReadingType = () => {
     if (isDeviceEnergySelected && !isDeviceCompostSelected) {
@@ -97,21 +98,20 @@ const LineGraphDataVisual = ({
 
   const adjustedMaxValue = useMemo(() => {
     const baseMax = selectedParameter ? getMaxValue(selectedParameter) : 0;
-    return baseMax; // Increase max value by 20% for top spacing
-  }, [selectedParameter, getMaxValue]);
+    return baseMax * 1.2; 
+  }, [selectedParameter, getMaxValue]); // Animation setup
 
-  // Animation setup
   const fadeAnim = useRef(new Animated.Value(0)).current; // Initial opacity 0
 
   useEffect(() => {
     if (lengthChecker && !isLoading) {
       Animated.timing(fadeAnim, {
-        toValue: 1, // Fade in to full opacity
-        duration: 500, // Animation duration (milliseconds) - adjust as needed
-        useNativeDriver: true, // For better performance
+        toValue: 1,
+        duration: 500, 
+        useNativeDriver: true, 
       }).start();
     } else {
-      fadeAnim.setValue(0); // Optionally reset opacity if chart hides
+      fadeAnim.setValue(0);
     }
   }, [lengthChecker, isLoading, fadeAnim]);
 
@@ -130,32 +130,32 @@ const LineGraphDataVisual = ({
     if (isDeviceEnergySelected) {
       return {
         lineColor1: "blue", // Solar
-        lineColor2: "red", // TEG
-        startFillColor1: "#8a56ce", // Solar
-        startFillColor2: "#56acce", // TEG
-        endFillColor1: "#8a56ce", // Solar
-        endFillColor2: "#56acce", // TEG
+        lineColor2: "green", // TEG
+        startFillColor1: "skyblue", // Solar
+        startFillColor2: "lightgreen", // TEG
+        // endFillColor1: "skyblue", // Solar
+        // endFillColor2: "lightgreen", // TEG
       };
     } else if (isDeviceCompostSelected) {
       return {
         lineColor1: "blue", // Compost 1
-        lineColor2: "red", // Compost 2
-        startFillColor1: "#8a56ce", // Compost 1
-        startFillColor2: "#56acce", // Compost 2
-        endFillColor1: "#8a56ce", // Compost 1
-        endFillColor2: "#56acce", // Compost 2
+        lineColor2: "green", // Compost 2
+        startFillColor1: "skyblue", // Compost 1
+        startFillColor2: "lightgreen", // Compost 2
+        // endFillColor1: "skyblue", // Compost 1
+        // endFillColor2: "lightgreen", // Compost 2
       };
     } else {
       return {
-        lineColor1: "#07BAD1", // Default color if neither is selected
+        lineColor1: "#07BAD1",
         lineColor2: "orange",
         startFillColor1: "#8a56ce",
         startFillColor2: "#56acce",
-        endFillColor1: "#8a56ce",
-        endFillColor2: "#56acce",
+        // endFillColor1: "#8a56ce",
+        // endFillColor2: "#56acce",
       };
     }
-  }, [isDeviceEnergySelected, isDeviceCompostSelected]); // Dependency array is crucial
+  }, [isDeviceEnergySelected, isDeviceCompostSelected]);
 
   return (
     <View className="flex-1 ">
@@ -164,19 +164,27 @@ const LineGraphDataVisual = ({
           <View>
             <View className="w-full justify-center items-center">
               <View className="w-[72.5%] flex-row justify-center items-center ">
-                <Text className="flex-1 text-start font-semibold text-md py-2">
+                <Text className="flex-1 text-start font-semibold text-[12px] py-2">
                   {chartDateLabel}
                 </Text>
+
                 <View className="flex-1 flex-col items-center justify-center ">
                   <View className="w-full flex-row justify-end items-center">
-                    <Text className="font-semibold">{readingTypeLabels.data1Label}</Text>
+                    <Text className="text-[12px] font-semibold">
+                      {readingTypeLabels.data1Label}
+                    </Text>
+
                     <View
                       className="w-4 h-4 rounded-full ml-4"
                       style={{ backgroundColor: indicatorColor1 }}
                     />
                   </View>
+
                   <View className="w-full flex-row justify-end items-center">
-                    <Text className="font-semibold">{readingTypeLabels.data2Label}</Text>
+                    <Text className="text-[12px] font-semibold">
+                      {readingTypeLabels.data2Label}
+                    </Text>
+
                     <View
                       className="w-4 h-4 rounded-full ml-4" // Added margin
                       style={{ backgroundColor: indicatorColor2 }}
@@ -185,8 +193,10 @@ const LineGraphDataVisual = ({
                 </View>
               </View>
             </View>
+
             <View className="h-[350px] min-h-[350px] overflow-hidden">
               {/* overflow-hidden to clip during fade */}
+
               <Animated.View style={{ opacity: fadeAnim }}>
                 {/* Animated.View for fade */}
                 {!isLoading && lengthChecker ? ( // Conditionally render LineChart when data is ready and not loading
@@ -201,66 +211,62 @@ const LineGraphDataVisual = ({
                         ? chartDataTeg
                         : chartDataCompost2
                     }
-                    // color="#07BAD1"
-                    // color2="orange"
                     noOfSections={5}
                     height={300}
                     showVerticalLines
-                    thickness={3}
-                    initialSpacing={0}
-                    spacing={75}
+                    verticalLinesThickness={0}
+                    thickness={1}
+                    rulesThickness={0}
+                    initialSpacing={20}
+                    endSpacing={-10}
+                    spacing={50}
                     backgroundColor="transparent"
                     rulesType="solid"
                     rulesColor="gray"
+                    // animation
                     isAnimated
                     animateOnDataChange
                     animationDuration={1000}
-                    onDataChangeAnimationDuration={3000}
+                    onDataChangeAnimationDuration={1000}
+                    scrollAnimation
                     areaChart
                     curved
                     maxValue={adjustedMaxValue}
                     xAxisLabelsHeight={40}
                     xAxisTextNumberOfLines={2}
-                    scrollEventThrottle={16}
+                    // scrollEventThrottle={16}
                     yAxisLabelWidth={30}
                     xAxisThickness={0}
                     xAxisLabelTextStyle={{
-                      marginLeft: 25,
-                      fontSize: 8,
+                      // marginLeft: 25,
+                      marginTop: 10,
+                      fontSize: 6,
                       fontWeight: "bold",
-                      textAlign: "center",
-                      marginTop: 5,
                     }}
                     roundToDigits={0}
                     yAxisLabelSuffix={
                       selectedParameter &&
                       getYAxisLabelSuffix(selectedParameter)
                     }
-                    yAxisTextStyle={{ fontSize: 8, fontWeight: "bold" }}
+                    yAxisTextStyle={{ fontSize: 6, fontWeight: "bold" }}
                     yAxisThickness={0}
                     hideDataPoints
-                    // dataPointsColor1="blue"
-                    // dataPointsColor2="red"
-                    // startFillColor1="#8a56ce"
-                    // startFillColor2="#56acce"
-                    // endFillColor1="#8a56ce"
-                    // endFillColor2="#56acce"
                     startOpacity={0.8}
-                    endOpacity={0.3}
-                    // color
+                    endOpacity={0.3} // color
                     color={lineChartColor.lineColor1} // Use memoized color
                     color2={lineChartColor.lineColor2} // Use memoized color
                     dataPointsColor1={lineChartColor.lineColor1}
                     dataPointsColor2={lineChartColor.lineColor2}
                     startFillColor1={lineChartColor.startFillColor1}
                     startFillColor2={lineChartColor.startFillColor2}
-                    endFillColor1={lineChartColor.endFillColor1}
-                    endFillColor2={lineChartColor.endFillColor2}
+                    // endFillColor1={lineChartColor.endFillColor1}
+                    // endFillColor2={lineChartColor.endFillColor2}
                     focusEnabled
                     showTextOnFocus
                     pointerConfig={{
                       activatePointersOnLongPress: true,
                       pointerStripUptoDataPoint: true,
+                      autoAdjustPointerLabelPosition: false,
                       pointerStripColor: "gray",
                       pointerStripWidth: 2,
                       strokeDashArray: [4, 5],
@@ -268,7 +274,7 @@ const LineGraphDataVisual = ({
                       radius: 4,
                       pointerLabelWidth: 90,
                       pointerLabelHeight: 1000,
-                      autoAdjustPointerLabelPosition: false,
+                      pointerStripHeight: 160,
                       pointerLabelComponent: (items: any) => (
                         <PointerLabelComponent
                           items={items}
@@ -287,8 +293,8 @@ const LineGraphDataVisual = ({
                 )}
               </Animated.View>
             </View>
-
             {/* Parameter Selection for Energy and Compost */}
+
             {(isDeviceEnergySelected || isDeviceCompostSelected) && (
               <View className="w-full justify-center items-center ">
                 <View className="w-[72.5%] pt-2 flex-row flex justify-between items-center">
