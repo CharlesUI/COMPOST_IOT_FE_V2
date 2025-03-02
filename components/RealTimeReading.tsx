@@ -76,4 +76,8 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
   );
 };
 
-export default RealTimeReading;
+// In RealTimeReading.tsx and other components
+export default React.memo(RealTimeReading, (prevProps, nextProps) => {
+  return prevProps.selectedReading === nextProps.selectedReading &&
+         JSON.stringify(prevProps.realTimeData) === JSON.stringify(nextProps.realTimeData);
+});

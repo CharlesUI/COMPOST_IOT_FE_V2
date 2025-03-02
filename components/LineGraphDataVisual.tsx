@@ -111,6 +111,7 @@ const LineGraphDataVisual = ({
         useNativeDriver: true, 
       }).start();
     } else {
+      // Reset the animation value to 0
       fadeAnim.setValue(0);
     }
   }, [lengthChecker, isLoading, fadeAnim]);
@@ -118,10 +119,10 @@ const LineGraphDataVisual = ({
   useEffect(() => {
     if (isDeviceEnergySelected) {
       setIndicatorColor1("blue");
-      setIndicatorColor2("red");
+      setIndicatorColor2("green");
     } else if (isDeviceCompostSelected) {
       setIndicatorColor1("blue");
-      setIndicatorColor2("red");
+      setIndicatorColor2("green");
     }
   }, [isDeviceEnergySelected, isDeviceCompostSelected]); // Update on selection change
 
@@ -131,28 +132,28 @@ const LineGraphDataVisual = ({
       return {
         lineColor1: "blue", // Solar
         lineColor2: "green", // TEG
-        startFillColor1: "skyblue", // Solar
-        startFillColor2: "lightgreen", // TEG
-        // endFillColor1: "skyblue", // Solar
-        // endFillColor2: "lightgreen", // TEG
+        startFillColor1: "rgba(135, 206, 235, 0.8)", // skyblue with alpha
+        endFillColor1: "rgba(135, 206, 235, 0.3)", // skyblue with lower alpha
+        startFillColor2: "rgba(144, 238, 144, 0.8)", // lightgreen with alpha
+        endFillColor2: "rgba(144, 238, 144, 0.3)", // lightgreen with lower alpha
       };
     } else if (isDeviceCompostSelected) {
       return {
         lineColor1: "blue", // Compost 1
         lineColor2: "green", // Compost 2
-        startFillColor1: "skyblue", // Compost 1
-        startFillColor2: "lightgreen", // Compost 2
-        // endFillColor1: "skyblue", // Compost 1
-        // endFillColor2: "lightgreen", // Compost 2
+        startFillColor1: "rgba(135, 206, 235, 0.8)", // skyblue with alpha
+        endFillColor1: "rgba(135, 206, 235, 0.3)", // skyblue with lower alpha
+        startFillColor2: "rgba(144, 238, 144, 0.8)", // lightgreen with alpha
+        endFillColor2: "rgba(144, 238, 144, 0.3)", // lightgreen with lower alpha
       };
     } else {
       return {
         lineColor1: "#07BAD1",
         lineColor2: "orange",
-        startFillColor1: "#8a56ce",
-        startFillColor2: "#56acce",
-        // endFillColor1: "#8a56ce",
-        // endFillColor2: "#56acce",
+        startFillColor1: "rgba(138, 86, 206, 0.8)", // #8a56ce with alpha
+        endFillColor1: "rgba(138, 86, 206, 0.3)", // #8a56ce with lower alpha
+        startFillColor2: "rgba(86, 172, 206, 0.8)", // #56acce with alpha
+        endFillColor2: "rgba(86, 172, 206, 0.3)", // #56acce with lower alpha
       };
     }
   }, [isDeviceEnergySelected, isDeviceCompostSelected]);
@@ -214,15 +215,15 @@ const LineGraphDataVisual = ({
                     noOfSections={5}
                     height={300}
                     showVerticalLines
-                    verticalLinesThickness={0}
-                    thickness={1}
-                    rulesThickness={0}
-                    initialSpacing={20}
+                    verticalLinesColor={"gray"}
+                    thickness={2}
+                    rulesThickness={1}
+                    rulesType="solid"
+                    rulesColor="gray"
+                    initialSpacing={40}
                     endSpacing={-10}
                     spacing={50}
                     backgroundColor="transparent"
-                    rulesType="solid"
-                    rulesColor="gray"
                     // animation
                     isAnimated
                     animateOnDataChange
@@ -236,7 +237,8 @@ const LineGraphDataVisual = ({
                     xAxisTextNumberOfLines={2}
                     // scrollEventThrottle={16}
                     yAxisLabelWidth={30}
-                    xAxisThickness={0}
+                    xAxisThickness={1}
+                    xAxisColor={"gray"}
                     xAxisLabelTextStyle={{
                       // marginLeft: 25,
                       marginTop: 10,
@@ -250,17 +252,17 @@ const LineGraphDataVisual = ({
                     }
                     yAxisTextStyle={{ fontSize: 6, fontWeight: "bold" }}
                     yAxisThickness={0}
-                    hideDataPoints
+                    // hideDataPoints
                     startOpacity={0.8}
                     endOpacity={0.3} // color
-                    color={lineChartColor.lineColor1} // Use memoized color
-                    color2={lineChartColor.lineColor2} // Use memoized color
+                    color={lineChartColor.lineColor1}
+                    color2={lineChartColor.lineColor2}
                     dataPointsColor1={lineChartColor.lineColor1}
                     dataPointsColor2={lineChartColor.lineColor2}
                     startFillColor1={lineChartColor.startFillColor1}
                     startFillColor2={lineChartColor.startFillColor2}
-                    // endFillColor1={lineChartColor.endFillColor1}
-                    // endFillColor2={lineChartColor.endFillColor2}
+                    endFillColor1={lineChartColor.endFillColor1}
+                    endFillColor2={lineChartColor.endFillColor2}
                     focusEnabled
                     showTextOnFocus
                     pointerConfig={{

@@ -1,7 +1,7 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { Camera, CameraView } from 'expo-camera';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useRef, useEffect, useState } from "react";
+import { Camera, CameraView } from "expo-camera";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import {
   AppState,
   Linking,
@@ -11,14 +11,14 @@ import {
   Dimensions,
   View,
   Alert,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { TouchableOpacity, Text } from 'react-native';
-import { Canvas, DiffRect, rect, rrect } from '@shopify/react-native-skia';
-import { DeviceTextProp } from '../(tabs)';
-import { useAddedDeviceContext } from '@/context/useAddedDeviceContext';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { TouchableOpacity, Text } from "react-native";
+import { Canvas, DiffRect, rect, rrect } from "@shopify/react-native-skia";
+import { DeviceTextProp } from "../(tabs)";
+import { useAddedDeviceContext } from "@/context/useAddedDeviceContext";
 
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
 
 const innerDimension = 300;
 
@@ -36,15 +36,45 @@ const inner = rrect(
 
 const validDeviceIds = ["CMPST10923", "CMPST18276", "CMPST19284"];
 
-
 export default function Home() {
   const { addedDevices, setAddedDevices } = useAddedDeviceContext(); // Access the context
 
+  const handleAddDevice = (text: string | null) => {
+    if (!text) {
+      Alert.alert("Error", "Please enter a device ID.");
+      return;
+    }
+
+    if (text.length !== 10) {
+      Alert.alert("Error", "Device ID must be 10 characters long.");
+      return;
+    }
+
+    if (!validDeviceIds.includes(text)) {
+      Alert.alert("Error", "Invalid device ID.");
+      return;
+    }
+
+    if (
+      addedDevices &&
+      addedDevices.find((device) => device.deviceId === text)
+    ) {
+      Alert.alert("Error", "Device ID already exists.");
+      return;
+    }
+
+    const newDevice: DeviceTextProp = {
+      id: Math.random().toString(),
+      deviceId: text,
+    };
+
+    setAddedDevices(addedDevices ? [...addedDevices, newDevice] : [newDevice]);
+    // router.push("/Device"); // Or router.navigate("/device") depending on your expo-router version
+    
+  };
   const qrLock = useRef(false);
-  const appState = useRef(AppState.currentState);
   const router = useRouter();
 
-  const [scanMessage, setScanMessage] = useState('Scanning...');
   const [cameraReady, setCameraReady] = useState(false);
 
   const [hasScanned, setHasScanned] = useState(false);
@@ -54,7 +84,8 @@ export default function Home() {
     qrLock.current = false;
   }, [cameraReady]);
 
-  const handleBarcodeScanned = ({ data }: any) => {  // No need for any type here
+  const handleBarcodeScanned = ({ data }: any) => {
+    // No need for any type here
     if (data && cameraReady && !hasScanned) {
       setHasScanned(true);
       qrLock.current = true;
@@ -73,11 +104,13 @@ export default function Home() {
               id: Math.random().toString(),
               deviceId: data, // Use the scanned data as the deviceId
             };
-  
+            console.log("data", data)
+            
             setAddedDevices((prevDevices) => {
               return prevDevices ? [...prevDevices, newDevice] : [newDevice];
             });
-            router.push("/Device"); // Navigate to Device Tab
+            handleAddDevice(data);
+            router.back(); 
           },
         },
       ]);
@@ -87,7 +120,7 @@ export default function Home() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        {Platform.OS === 'android' ? <StatusBar hidden /> : null}
+        {Platform.OS === "android" ? <StatusBar hidden /> : null}
         <CameraView
           style={styles.camera}
           facing="back"
@@ -102,7 +135,12 @@ export default function Home() {
             </View>
 
             <Canvas style={styles.canvas}>
-              <DiffRect inner={inner} outer={outer} color="black" opacity={0.5} />
+              <DiffRect
+                inner={inner}
+                outer={outer}
+                color="black"
+                opacity={0.5}
+              />
             </Canvas>
 
             <View style={styles.footer}>
@@ -131,43 +169,43 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   overlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
-    width: '100%',
-    height: '100%',
-    flexDirection: 'column',
+    width: "100%",
+    height: "100%",
+    flexDirection: "column",
   },
   canvas: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   header: {
-    alignItems: 'center',
-    paddingTop: Platform.OS === 'android' ? 30 : 50,
+    alignItems: "center",
+    paddingTop: Platform.OS === "android" ? 30 : 50,
     paddingBottom: 20,
   },
   headerText: {
-    color: 'white',
+    color: "white",
     fontSize: 17.5,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     padding: 15,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     borderRadius: 10,
   },
   footer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 20, // Adjust as needed
     left: 0,
     right: 0,
-    alignItems: 'center',
+    alignItems: "center",
   },
   exitButton: {
     borderRadius: 15, // Make it a circle
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
     padding: 15,
   },
 });

@@ -27,7 +27,7 @@ const AddedDevice = ({ addedDevices, setAddedDevices }: AddedDevicesProps) => {
 
   return (
     // Added
-    <View className="flex-1 p-5 bg-pink">
+    <View className="flex-1 p-6 bg-pink">
       <View className=" flex-row justify-between items-center mb-4">
         <Text>Recently Added</Text>
         <Pressable onPress={() => setAddedDevices(null)}>
@@ -38,7 +38,7 @@ const AddedDevice = ({ addedDevices, setAddedDevices }: AddedDevicesProps) => {
       <FlatList
         // Add a listHeader to not make an error using scrollView
         ListHeaderComponent={
-          <View className="border-b-2 border-gray-200"></View>
+          <View className="mb-2 border-gray-200"></View>
         }
         showsVerticalScrollIndicator={false}
         data={addedDevices}

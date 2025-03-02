@@ -7,6 +7,8 @@ import AddedDevice from "@/components/AddedDevice";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAddedDeviceContext } from "@/context/useAddedDeviceContext"; // Import the hook
 import HeaderSection from "@/components/HeaderSection";
+import AntDesign from "@expo/vector-icons/AntDesign";
+import { TouchableOpacity } from "react-native";
 
 export interface DeviceTextProp {
   id: string;
@@ -42,11 +44,13 @@ const HomePage = () => {
 
     if (text.length !== 10) {
       Alert.alert("Error", "Device ID must be 10 characters long.");
+      setDeviceText("");
       return;
     }
 
     if (!validDeviceIds.includes(text)) {
       Alert.alert("Error", "Invalid device ID.");
+      setDeviceText("");
       return;
     }
 
@@ -55,6 +59,7 @@ const HomePage = () => {
       addedDevices.find((device) => device.deviceId === text)
     ) {
       Alert.alert("Error", "Device ID already exists.");
+      setDeviceText("");
       return;
     }
 
@@ -76,30 +81,27 @@ const HomePage = () => {
         title="Log In"
         onPressToggle={goToUserLog}
       />
-      <View className="flex-1 bg-gray-200">
-        <View className="w-full flex-row justify-between p-3 mt-5">
-          <Text className=" font-semibold p-1">Compost Monitoring Server</Text>
-          <CustomButton
-            onPress={() => console.log("HELP")}
-            title="HELP"
-            containerStyles="border-[0]"
-          />
+      <View className="flex-1 bg-gray-300">
+        <View className="mt-10 w-full flex-row justify-between px-5">
+          <Text className=" font-bold p-1 color-black">
+            Compost Monitoring Server
+          </Text>
         </View>
 
-        <View className=" w-full flex justify-center items-center">
-          <View className="w-[92.5%] bg-white rounded-md mx-2">
+        <View className=" w-full flex justify-center items-center p-2">
+          <View className="w-[92.5%] bg-white rounded-lg mb-2">
             {/* First */}
-            <View className=" px-5 py-4 border-b-2 border-gray-300">
+            <View className=" px-5 py-4 border-gray-300">
               <Pressable className="w-full" onPress={goToUserLog}>
                 <Text className=" text-justify">
-                  Press here to sign in to your compost IoT account and see the
-                  details regarding your compost bin energy harvesting and
-                  monitoring system.
+                  Sign in to your compost IoT account and monitor your device.
                 </Text>
               </Pressable>
             </View>
-            {/* Second */}
-            <View className=" px-5 py-4  border-b-2 border-gray-300">
+          </View>
+          {/* Second */}
+          <View className="w-[92.5%] bg-white rounded-lg mx-2">
+            <View className=" px-5 py-4 border-gray-300">
               <Pressable className=" mb-2">
                 <Text>Enter Device Number:</Text>
               </Pressable>
@@ -111,29 +113,28 @@ const HomePage = () => {
                   onChangeText={(text) => setDeviceText(text)}
                   className=" border-[0.5px] mb-3 rounded-md p-2"
                 />
-                <CustomButton
-                  title="Add Device"
-                  containerStyles="min-h-[45px] border-[1px] bg-black"
-                  textStyles=" text-white"
-                  onPress={() => handleAddDevice(deviceText)}
-                ></CustomButton>
+                <View className="flex flex-row gap-2">
+                  <CustomButton
+                    title="Monitor Device"
+                    containerStyles="flex-1 min-h-[45px] border-[1px] bg-[#2F2C2C]"
+                    textStyles=" text-white"
+                    onPress={() => handleAddDevice(deviceText)}
+                  ></CustomButton>
+                  <TouchableOpacity
+                    onPress={handleScanQRCode}
+                    className="p-2 justify-center items-center border-2 rounded-md"
+                  >
+                    <AntDesign name="qrcode" size={40} color="black" />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-            {/* Third */}
-            <View className="px-5 py-4">
-              <CustomButton
-                title="Scan QR Code"
-                containerStyles="min-h-[45px] border-[1px] bg-black"
-                textStyles=" text-white"
-                onPress={handleScanQRCode}
-              ></CustomButton>
             </View>
           </View>
         </View>
 
         {addedDevices === null ? (
-          <View className="flex-1 p-5 bg-pink">
-            <Text>No Added Device</Text>
+          <View className="flex-1 justify-start items-center p-5">
+            <Text className="color-gray-400">No Added Device</Text>
           </View>
         ) : (
           <View className="flex-1">

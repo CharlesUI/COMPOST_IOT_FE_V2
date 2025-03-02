@@ -38,6 +38,21 @@ import {
 } from "@/hooks/APICallTypes";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+// Create a skeleton loader component for better UX during loading
+const ChartSkeleton = () => (
+  <View className="w-full h-[350px] flex justify-center items-center">
+    <View className="w-[90%] h-[250px] bg-gray-200 rounded-md">
+      <View className="w-full h-6 bg-gray-300 mb-2 rounded-sm" />
+      <View className="w-full flex-1 flex-row">
+        <View className="w-[10%] h-full bg-gray-300 rounded-sm" />
+        <View className="flex-1 flex justify-end">
+          <View className="w-full h-[40%] bg-gray-300 rounded-sm" />
+        </View>
+      </View>
+    </View>
+  </View>
+);
+
 const Device = () => {
   const [deviceData, setDeviceData] = useState<APIDataProp | null>(null);
   const [deviceNumber, setDeviceNumber] = useState<string>();
@@ -318,8 +333,7 @@ const Device = () => {
       setDeviceCompostSelected(false);
     }
     setDeviceEnergySelected(!isDeviceEnergySelected);
-    setSelectedParameter("voltage");
-    setSelectedTime("Day");
+    setSelectedParameter("voltage")
   };
 
   const handleDeviceCompostClick = () => {
@@ -327,8 +341,7 @@ const Device = () => {
       setDeviceEnergySelected(false);
     }
     setDeviceCompostSelected(!isDeviceCompostSelected);
-    setSelectedTime("Day");
-    setSelectedParameter("methane");
+    setSelectedParameter("methane")
   };
 
   const debouncedSetParameter = useRef(
