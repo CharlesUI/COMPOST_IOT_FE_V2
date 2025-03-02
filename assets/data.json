@@ -2,7 +2,7 @@
   "_id": "device_001",
   "deviceNumber": "CMPST10923",
   "realTimeData": {
-      "batteryStatus": 98,
+      "batteryStatus": 69,
       "solar": {
           "voltage": 12.61,
           "current": 3.71,

@@ -10,14 +10,14 @@ const PointerLabelComponent = ({ items, selectedParameter, readingTypeLabels }: 
         height: 90,
         width: 120,
         justifyContent: "center",
-        marginTop: -55,
+        marginTop: -65,
         marginLeft: -40,
         alignItems: "center",
       }}
     >
       <Text
         style={{
-          color: "black",
+          color: "white",
           fontWeight: "bold",
           fontSize: 12,
           marginBottom: 3,
@@ -41,7 +41,7 @@ const PointerLabelComponent = ({ items, selectedParameter, readingTypeLabels }: 
             fontWeight: "bold",
             textAlign: "center",
             fontSize: 10,
-            color: "blue",
+            color: "#eec643",
           }}
         >
           {readingTypeLabels.data1Label}: {items[0]?.value?.toFixed(2)}{" "}
@@ -62,7 +62,7 @@ const PointerLabelComponent = ({ items, selectedParameter, readingTypeLabels }: 
               fontWeight: "bold",
               textAlign: "center",
               fontSize: 10,
-              color: "red",
+              color: "#10B04B",
             }}
           >
             {readingTypeLabels.data2Label}: {items[1]?.value?.toFixed(2)}{" "}

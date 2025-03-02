@@ -81,15 +81,15 @@ const HomePage = () => {
         title="Log In"
         onPressToggle={goToUserLog}
       />
-      <View className="flex-1 bg-gray-300">
-        <View className="mt-10 w-full flex-row justify-between px-5">
-          <Text className=" font-bold p-1 color-black">
+      <View className="flex-1 bg-[#2F2C2C]">
+        <View className="mt-10 mb-2 w-full flex-row justify-between px-5">
+          <Text className=" font-bold p-1 color-white">
             Compost Monitoring Server
           </Text>
         </View>
 
         <View className=" w-full flex justify-center items-center p-2">
-          <View className="w-[92.5%] bg-white rounded-lg mb-2">
+          <View className="w-[92.5%] bg-slate-200 rounded-lg mb-2">
             {/* First */}
             <View className=" px-5 py-4 border-gray-300">
               <Pressable className="w-full" onPress={goToUserLog}>
@@ -100,8 +100,8 @@ const HomePage = () => {
             </View>
           </View>
           {/* Second */}
-          <View className="w-[92.5%] bg-white rounded-lg mx-2">
-            <View className=" px-5 py-4 border-gray-300">
+          <View className="w-[92.5%] bg-slate-200 rounded-lg mx-2">
+            <View className=" px-5 py-4 border-gray-800">
               <Pressable className=" mb-2">
                 <Text>Enter Device Number:</Text>
               </Pressable>
@@ -116,13 +116,13 @@ const HomePage = () => {
                 <View className="flex flex-row gap-2">
                   <CustomButton
                     title="Monitor Device"
-                    containerStyles="flex-1 min-h-[45px] border-[1px] bg-[#2F2C2C]"
+                    containerStyles="flex-1 min-h-[45px] border-[1px] bg-gray-800"
                     textStyles=" text-white"
                     onPress={() => handleAddDevice(deviceText)}
                   ></CustomButton>
                   <TouchableOpacity
                     onPress={handleScanQRCode}
-                    className="p-2 justify-center items-center border-2 rounded-md"
+                    className="p-2 justify-center items-center border-gray-800 border-2 rounded-md"
                   >
                     <AntDesign name="qrcode" size={40} color="black" />
                   </TouchableOpacity>
@@ -134,7 +134,7 @@ const HomePage = () => {
 
         {addedDevices === null ? (
           <View className="flex-1 justify-start items-center p-5">
-            <Text className="color-gray-400">No Added Device</Text>
+            <Text className="color-gray-100 opacity-30">No Added Device</Text>
           </View>
         ) : (
           <View className="flex-1">

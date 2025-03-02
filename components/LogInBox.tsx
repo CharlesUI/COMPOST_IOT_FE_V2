@@ -16,7 +16,7 @@ const LogInBox = ({ email, password, setLogInDetails }: LogData) => {
   const [togglePass, setTogglePass] = useState<boolean>(false);
 
   return (
-    <View className="p-5 ">
+    <View className=" bg-slate-200 p-5 m-2 rounded-md">
       <View className="">
         <TextInput
           placeholder="**********@email.com"
@@ -26,7 +26,7 @@ const LogInBox = ({ email, password, setLogInDetails }: LogData) => {
               return { ...prevData, email: text };
             });
           }}
-          className=" border-[1.5px] mb-4 rounded-md p-3"
+          className=" border-[0.5px] mb-4 rounded-md p-3"
         />
         <View className="relative w-full">
           <TextInput
@@ -38,7 +38,7 @@ const LogInBox = ({ email, password, setLogInDetails }: LogData) => {
                 return { ...prevData, password: text };
               });
             }}
-            className=" border-[1.5px] mb-4 rounded-md p-3"
+            className=" border-[0.5px] mb-4 rounded-md p-3"
           />
           <View className="absolute right-3 top-3">
             <Pressable onPress={() => setTogglePass(!togglePass)}>
@@ -51,7 +51,7 @@ const LogInBox = ({ email, password, setLogInDetails }: LogData) => {
           </View>
         </View>
         <CustomButton
-          containerStyles="min-h-[50px] rounded-md bg-black"
+          containerStyles="min-h-[50px] rounded-md bg-gray-800"
           textStyles="text-white"
           title="Log In"
           onPress={() => console.log({ email, password })}

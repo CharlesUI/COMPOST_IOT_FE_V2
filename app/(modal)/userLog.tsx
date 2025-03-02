@@ -60,10 +60,10 @@ const UserLog = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 relative">
+    <SafeAreaView className="flex-1 relative bg-[#2F2C2C]">
       {/* Header */}
-      <View className="w-full flex-row p-5 justify-between items-center border-b-[1px]">
-        <Text className=" font-extrabold text-2xl">ACCOUNT</Text>
+      <View className="w-full flex-row p-5 justify-between items-center border-gray-200 border-b-[1px] mb-5">
+        <Text className=" font-extrabold text-2xl color-white">ACCOUNT</Text>
         <Pressable onPress={() => router.back()} className="">
           <Feather name="x" size={24} color="black" />
         </Pressable>
@@ -92,12 +92,14 @@ const UserLog = () => {
         </View>
 
         {/* Toggle Button */}
-        <View className="w-full items-center p-1">
-          <CustomButton
-            containerStyles="min-h-[50px] bg-gray border-[1px] w-[92.5%]"
-            title={userLog ? "Register" : "Log In"}
-            onPress={toggleUserLog}
-          ></CustomButton>
+        <View className="w-full">
+          <View className=" items-center bg-slate-200 p-5 m-2 rounded-md">
+            <CustomButton
+              containerStyles="w-full min-h-[50px] bg-gray border-[1px]"
+              title={userLog ? "Register" : "Log In"}
+              onPress={toggleUserLog}
+            ></CustomButton>
+          </View>
         </View>
       </Animated.View>
     </SafeAreaView>

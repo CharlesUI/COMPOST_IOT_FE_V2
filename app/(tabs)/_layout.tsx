@@ -10,9 +10,12 @@ const TabsLayout = () => {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: Colors.primary,
+        tabBarActiveTintColor: "#10B04B",
         tabBarInactiveTintColor: "lightgray", // Define the inactive tint color
-
+        tabBarStyle: {
+          backgroundColor: "#2F2C2C", // Replace "lightblue" with your desired color
+          minHeight: 60,
+        },
       }}
     >
       <Tabs.Screen
