@@ -60,10 +60,10 @@
 //     teg: [{timestamp: Date(), voltage: number, current: number, wattage:number}]
 
 
-//     compostContainerOne: [{timestamp: Date(), methane: number, temperature: number, moisture:number}]
+//     compostContainerOne: [{timestamp: Date(), methane: number, temperatureIn: number, temperatureOut: number, moisture:number}]
 
 
-//     compostContainerTwo: [{timestamp: Date(), methane: number, temperature: number, moisture:number}]
+//     compostContainerTwo: [{timestamp: Date(), methane: number, temperatureIn: number, temperatureOut: number, moisture:number}]
 
 
 // Generate mock data for energy
