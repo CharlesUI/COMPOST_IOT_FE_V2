@@ -1,5 +1,5 @@
 // Structure of the Whole Data
-// {	
+// {
 // 	_id: String,
 // 	deviceNumber: String,
 // 	realTimeData: {
@@ -16,12 +16,14 @@
 // 		},
 // 		compostContainerOne:{
 // 			methane: number,
-// 			temperature: number,
+// 			temperatureIn: number,
+//          temperatureOut: number,
 // 			moisture: number,
 // 		},
 // 		compostContainerTwo:{
 // 			methane: number,
-// 			temperature: number,
+// 			temperatureIn: number,
+//          temperatureOut: number,
 // 			moisture: number,
 // 		},
 // 		timestamp: Date
@@ -40,12 +42,14 @@
 // 		},
 // 		compostContainerOne:{
 // 			methane: number,
-// 			temperature: number,
+// 			temperatureIn: number,
+//          temperatureOut: number,
 // 			moisture: number,
 // 		},
 // 		compostContainerTwo:{
 // 			methane: number,
-// 			temperature: number,
+// 			temperatureIn: number,
+//          temperatureOut: number,
 // 			moisture: number,
 // 		},
 // 		timestamp: Date
@@ -56,15 +60,11 @@
 
 //     solar: [{timestamp: Date(), voltage: number, current: number, wattage:number}]
 
-
 //     teg: [{timestamp: Date(), voltage: number, current: number, wattage:number}]
-
 
 //     compostContainerOne: [{timestamp: Date(), methane: number, temperatureIn: number, temperatureOut: number, moisture:number}]
 
-
 //     compostContainerTwo: [{timestamp: Date(), methane: number, temperatureIn: number, temperatureOut: number, moisture:number}]
-
 
 // Generate mock data for energy
 // const generateMockData1 = (timePeriod: string, dataType: string) => {
@@ -141,4 +141,3 @@
 //     timeStamp: new Date(), // Mock timestamp
 //   }));
 // };
-

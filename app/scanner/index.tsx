@@ -1,7 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
-import { Camera, CameraView } from "expo-camera";
-import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import React, { useState, useRef, useEffect } from "react";
 import {
   AppState,
   Linking,
@@ -11,17 +8,20 @@ import {
   Dimensions,
   View,
   Alert,
+  TouchableOpacity,
+  Text,
 } from "react-native";
+import { CameraView } from "expo-camera";
+import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { TouchableOpacity, Text } from "react-native";
 import { Canvas, DiffRect, rect, rrect } from "@shopify/react-native-skia";
-import { DeviceTextProp } from "../(tabs)";
-import { useAddedDeviceContext } from "@/context/useAddedDeviceContext";
+
+import { useUser } from "@/context/UserContext";
+import useAddDevice from "@/hooks/useAddDevice";
 
 const { width, height } = Dimensions.get("window");
-
 const innerDimension = 300;
-
 const outer = rrect(rect(0, 0, width, height), 0, 0);
 const inner = rrect(
   rect(
@@ -37,9 +37,14 @@ const inner = rrect(
 const validDeviceIds = ["CMPST10923", "CMPST18276", "CMPST19284"];
 
 export default function Home() {
-  const { addedDevices, setAddedDevices } = useAddedDeviceContext(); // Access the context
+  const { user, logoutUser, updateUser } = useUser(); // Access updateUser
+  const {
+    addDevice,
+    loading: addingDevice,
+    error: addDeviceError,
+  } = useAddDevice(); // Use the new hook
 
-  const handleAddDevice = (text: string | null) => {
+  const handleAddDevice = async (text: string | null) => {
     if (!text) {
       Alert.alert("Error", "Please enter a device ID.");
       return;
@@ -50,33 +55,27 @@ export default function Home() {
       return;
     }
 
-    if (!validDeviceIds.includes(text)) {
-      Alert.alert("Error", "Invalid device ID.");
-      return;
+    const success = await addDevice(text, user?._id);
+
+    if (success) {
+      router.back();
+      Alert.alert("Success", "Device added successfully!");
+      updateUser({
+        _id: user?._id,
+        username: user?.username,
+        email: user?.email,
+        devices: [...(user?.devices || []), text],
+      });
+      // No navigation here as it's the main screen
+    } else if (addDeviceError) {
+      Alert.alert("Error", addDeviceError);
     }
-
-    if (
-      addedDevices &&
-      addedDevices.find((device) => device.deviceId === text)
-    ) {
-      Alert.alert("Error", "Device ID already exists.");
-      return;
-    }
-
-    const newDevice: DeviceTextProp = {
-      id: Math.random().toString(),
-      deviceId: text,
-    };
-
-    setAddedDevices(addedDevices ? [...addedDevices, newDevice] : [newDevice]);
-    // router.push("/Device"); // Or router.navigate("/device") depending on your expo-router version
-    
   };
+
   const qrLock = useRef(false);
   const router = useRouter();
 
   const [cameraReady, setCameraReady] = useState(false);
-
   const [hasScanned, setHasScanned] = useState(false);
 
   useEffect(() => {
@@ -86,13 +85,26 @@ export default function Home() {
 
   const handleBarcodeScanned = ({ data }: any) => {
     // No need for any type here
+    console.log("data", data);
+    if (qrLock.current) {
+      // Check if a scan is already in progress
+      return;
+    }
     if (data && cameraReady && !hasScanned) {
       setHasScanned(true);
       qrLock.current = true;
 
       if (!validDeviceIds.includes(data)) {
+        router.back();
         Alert.alert("Error", "Invalid QR Code.");
-        router.back(); // Exit immediately on invalid code
+        updateUser({
+          _id: user?._id,
+          username: user?.username,
+          email: user?.email,
+          devices: [...(user?.devices || [])],
+        });
+        setHasScanned(false); // Allow scanning again
+        qrLock.current = false;
         return; // Important: Return to prevent further execution
       }
 
@@ -100,17 +112,10 @@ export default function Home() {
         {
           text: "OK",
           onPress: () => {
-            const newDevice: DeviceTextProp = {
-              id: Math.random().toString(),
-              deviceId: data, // Use the scanned data as the deviceId
-            };
-            console.log("data", data)
-            
-            setAddedDevices((prevDevices) => {
-              return prevDevices ? [...prevDevices, newDevice] : [newDevice];
-            });
+            router.back();
             handleAddDevice(data);
-            router.back(); 
+            setHasScanned(false); // Allow scanning again
+            qrLock.current = false;
           },
         },
       ]);
@@ -135,12 +140,7 @@ export default function Home() {
             </View>
 
             <Canvas style={styles.canvas}>
-              <DiffRect
-                inner={inner}
-                outer={outer}
-                color="black"
-                opacity={0.5}
-              />
+              <DiffRect inner={inner} outer={outer} color="black" opacity={0.5} />
             </Canvas>
 
             <View style={styles.footer}>

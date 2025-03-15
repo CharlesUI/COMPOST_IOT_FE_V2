@@ -1,32 +1,46 @@
-import { useCameraPermissions } from "expo-camera";
 import React, { useState } from "react";
-import { View, Text, Pressable, TextInput, Alert } from "react-native";
-import CustomButton from "@/components/CustomButton";
-import { useRouter, router } from "expo-router";
-import AddedDevice from "@/components/AddedDevice";
+import {
+  View,
+  Text,
+  Pressable,
+  TextInput,
+  Alert,
+  TouchableOpacity,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAddedDeviceContext } from "@/context/useAddedDeviceContext"; // Import the hook
-import HeaderSection from "@/components/HeaderSection";
+import { useCameraPermissions } from "expo-camera";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import { TouchableOpacity } from "react-native";
+import { useRouter } from "expo-router";
+
+import CustomButton from "@/components/CustomButton";
+import AddedDevice from "@/components/AddedDevice";
+import HeaderSection from "@/components/HeaderSection";
+import { useUser } from "@/context/UserContext";
+import useAddDevice from "@/hooks/useAddDevice"; // Import the new hook
+import { API_URL_BASE } from "@/constants/API_URL";
 
 export interface DeviceTextProp {
   id: string;
   deviceId: string;
 }
 
-const goToUserLog = () => {
-  router.push("/(modal)/userLog");
-};
-
 const validDeviceIds = ["CMPST10923", "CMPST18276", "CMPST19284"]; // Array of valid device IDs
 
 const HomePage = () => {
+  const { user, logoutUser, updateUser } = useUser(); // Access updateUser
+  const {
+    addDevice,
+    loading: addingDevice,
+    error: addDeviceError,
+  } = useAddDevice(); // Use the new hook
+
   const [permission, requestPermission] = useCameraPermissions();
   const [deviceText, setDeviceText] = useState<string>("");
-  const { addedDevices, setAddedDevices } = useAddedDeviceContext(); // Access the context
   const isPermissionGranted = Boolean(permission?.granted);
   const router = useRouter(); // Initialize router
+
+  console.log("User", user);
+  console.log("Added Devices", user?.devices);
 
   const handleScanQRCode = () => {
     if (!isPermissionGranted) {
@@ -36,7 +50,7 @@ const HomePage = () => {
     }
   };
 
-  const handleAddDevice = (text: string | null) => {
+  const handleAddDevice = async (text: string | null) => {
     if (!text) {
       Alert.alert("Error", "Please enter a device ID.");
       return;
@@ -48,39 +62,28 @@ const HomePage = () => {
       return;
     }
 
-    if (!validDeviceIds.includes(text)) {
-      Alert.alert("Error", "Invalid device ID.");
+    const success = await addDevice(text, user?._id);
+
+    if (success) {
+      Alert.alert("Success", "Device added successfully!");
+      updateUser({
+        _id: user?._id,
+        username: user?.username,
+        email: user?.email,
+        devices: [...user?.devices, text],
+      });
+      // setAddedDevices([...addedDevices, text]); // Update the context
       setDeviceText("");
-      return;
-    }
-
-    if (
-      addedDevices &&
-      addedDevices.find((device) => device.deviceId === text)
-    ) {
-      Alert.alert("Error", "Device ID already exists.");
+      router.push("/Device");
+    } else if (addDeviceError) {
+      Alert.alert("Error", addDeviceError);
       setDeviceText("");
-      return;
     }
-
-    const newDevice: DeviceTextProp = {
-      id: Math.random().toString(),
-      deviceId: text,
-    };
-
-    setAddedDevices(addedDevices ? [...addedDevices, newDevice] : [newDevice]);
-    setDeviceText("");
-
-    router.push("/Device"); // Or router.navigate("/device") depending on your expo-router version
   };
 
   return (
-    <SafeAreaView className="flex-1">
-      <HeaderSection
-        headerText="Compost IoT"
-        title="Log In"
-        onPressToggle={goToUserLog}
-      />
+    <SafeAreaView className="flex-1 w-full">
+      <HeaderSection headerText="Compost IoT" title="Log In" />
       <View className="flex-1 bg-[#2F2C2C]">
         <View className="mt-10 mb-2 w-full flex-row justify-between px-5">
           <Text className=" font-bold p-1 color-white">
@@ -92,7 +95,10 @@ const HomePage = () => {
           <View className="w-[92.5%] bg-slate-200 rounded-lg mb-2">
             {/* First */}
             <View className=" px-5 py-4 border-gray-300">
-              <Pressable className="w-full" onPress={goToUserLog}>
+              <Pressable
+                className="w-full"
+                onPress={() => console.log("HELLO MUNA")}
+              >
                 <Text className=" text-justify">
                   Sign in to your compost IoT account and monitor your device.
                 </Text>
@@ -132,16 +138,14 @@ const HomePage = () => {
           </View>
         </View>
 
-        {addedDevices === null ? (
-          <View className="flex-1 justify-start items-center p-5">
-            <Text className="color-gray-100 opacity-30">No Added Device</Text>
+        {/* The display of added devices should now reflect the user's context */}
+        {user ? (
+          <View className="flex-1">
+            <AddedDevice />
           </View>
         ) : (
-          <View className="flex-1">
-            <AddedDevice
-              addedDevices={addedDevices}
-              setAddedDevices={setAddedDevices}
-            />
+          <View className="flex-1 justify-start items-center p-5">
+            <Text className="color-gray-100 opacity-30">No Added Device</Text>
           </View>
         )}
       </View>

@@ -1,22 +1,53 @@
-import { View, Text, TextInput, Pressable } from "react-native";
-import React from "react";
-import { useState } from "react";
-import CustomButton from "./CustomButton";
-
-import { LogInDetails } from "@/app/(modal)/userLog";
+import React, { useState, useEffect } from "react";
+import { View, Text, TextInput, Pressable, Alert } from "react-native";
 import Feather from "@expo/vector-icons/Feather";
+
+import CustomButton from "./CustomButton";
+import { LogInDetails } from "@/app/(modal)/userLog";
 
 interface LogData {
   email: string;
   password: string;
   setLogInDetails: React.Dispatch<React.SetStateAction<LogInDetails>>;
+  handleLogInUser: () => void;
+  loading: boolean;
+  error: string | null;
 }
 
-const LogInBox = ({ email, password, setLogInDetails }: LogData) => {
+const LogInBox = ({
+  email,
+  password,
+  setLogInDetails,
+  handleLogInUser,
+  loading,
+  error,
+}: LogData) => {
   const [togglePass, setTogglePass] = useState<boolean>(false);
 
+  useEffect(() => {
+    if (error) {
+      console.log("Login hook error:", error);
+      Alert.alert(
+        "Login Error", // Title of the alert
+        error, // Message to display
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              // Optionally, you can reset the error state here if you want
+              // (though the useLogin hook currently clears it on the next attempt)
+              // setError(null); // This would require passing the setError function down
+            },
+          },
+        ]
+      );
+      // Optionally, you might want to reset the error state in the useLogin hook after showing the alert
+      // This would require passing the setError function from useLogin to UserLog
+    }
+  }, [error]);
+
   return (
-    <View className=" bg-slate-200 p-5 m-2 rounded-md">
+    <View className="w-[90%] bg-slate-200 p-5 m-2 rounded-md">
       <View className="">
         <TextInput
           placeholder="**********@email.com"
@@ -50,11 +81,15 @@ const LogInBox = ({ email, password, setLogInDetails }: LogData) => {
             </Pressable>
           </View>
         </View>
+        {/* {error && (
+          <Text className="text-red-500 mb-2">{error}</Text>
+        )} */}
         <CustomButton
           containerStyles="min-h-[50px] rounded-md bg-gray-800"
           textStyles="text-white"
-          title="Log In"
-          onPress={() => console.log({ email, password })}
+          title={loading ? "Logging In..." : "Log In"}
+          onPress={handleLogInUser}
+          disabled={loading}
         ></CustomButton>
       </View>
     </View>

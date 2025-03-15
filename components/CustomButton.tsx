@@ -1,9 +1,9 @@
-import { View, Text, TouchableOpacity } from "react-native";
 import React from "react";
+import { View, Text, TouchableOpacity } from "react-native";
 
 interface CustomButtonProps {
-  onPress: (title?: string | undefined) => void;
-  title: string;
+  onPress: (title?: React.JSX.Element | string) => void;
+  title: React.JSX.Element | string; // Accept JSX.Element or string
   textStyles?: string; // Accept Tailwind class strings for text styling
   containerStyles?: string; // Accept Tailwind class strings for container styling
   disabled?: boolean | undefined;

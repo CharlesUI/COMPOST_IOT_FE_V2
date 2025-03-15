@@ -1,9 +1,9 @@
-import { View, Text, TextInput, Pressable } from "react-native";
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { View, Text, TextInput, Pressable, Alert } from "react-native";
+import Feather from "@expo/vector-icons/Feather";
+
 import CustomButton from "./CustomButton";
 import { RegisterDetails } from "@/app/(modal)/userLog";
-import Feather from "@expo/vector-icons/Feather";
-import { useState } from "react";
 
 interface RegisterData {
   email: string;
@@ -11,6 +11,9 @@ interface RegisterData {
   password: string;
   confirmPass: string;
   setRegisterDetails: React.Dispatch<React.SetStateAction<RegisterDetails>>;
+  handleRegisterUser: () => void;
+  loading: boolean;
+  error: string | null;
 }
 
 const RegisterBox = ({
@@ -19,43 +22,62 @@ const RegisterBox = ({
   password,
   confirmPass,
   setRegisterDetails,
+  handleRegisterUser,
+  loading,
+  error,
 }: RegisterData) => {
   const [togglePass, setTogglePass] = useState<boolean>(false);
   const [toggleConfirmPass, setToggleConfirmPass] = useState<boolean>(false);
 
+  useEffect(() => {
+    if (error) {
+      console.log("Login hook error:", error);
+      Alert.alert(
+        "Login Error", // Title of the alert
+        error, // Message to display
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              // Optionally, you can reset the error state here if you want
+              // (though the useLogin hook currently clears it on the next attempt)
+              // setError(null); // This would require passing the setError function down
+            },
+          },
+        ]
+      );
+      // Optionally, you might want to reset the error state in the useLogin hook after showing the alert
+      // This would require passing the setError function from useLogin to UserLog
+    }
+  }, [error]);
+
   return (
-    <View className="bg-slate-200 p-5 m-2 rounded-md">
+    <View className="w-[90%] bg-slate-200 p-4 m-2 rounded-md">
       <View className="">
         <TextInput
-          placeholder="username"
+          placeholder="Username"
           value={username}
-          onChangeText={(text) => {
-            setRegisterDetails((prevData) => {
-              return { ...prevData, username: text };
-            });
-          }}
-          className=" border-[1.5px] mb-4 rounded-md p-3"
+          onChangeText={(text) =>
+            setRegisterDetails((prev) => ({ ...prev, username: text }))
+          }
+          className=" border-[0.5px] mb-4 rounded-md p-3"
         />
         <TextInput
           placeholder="**********@email.com"
           value={email}
-          onChangeText={(text) => {
-            setRegisterDetails((prevData) => {
-              return { ...prevData, email: text };
-            });
-          }}
+          onChangeText={(text) =>
+            setRegisterDetails((prev) => ({ ...prev, email: text }))
+          }
           className=" border-[0.5px] mb-4 rounded-md p-3"
         />
-        <View className="w-full relative">
+        <View className="relative w-full">
           <TextInput
             secureTextEntry={!togglePass}
-            placeholder="password"
+            placeholder="Password"
             value={password}
-            onChangeText={(text) => {
-              setRegisterDetails((prevData) => {
-                return { ...prevData, password: text };
-              });
-            }}
+            onChangeText={(text) =>
+              setRegisterDetails((prev) => ({ ...prev, password: text }))
+            }
             className=" border-[0.5px] mb-4 rounded-md p-3"
           />
           <View className="absolute right-3 top-3">
@@ -68,16 +90,14 @@ const RegisterBox = ({
             </Pressable>
           </View>
         </View>
-        <View className="relative">
+        <View className="relative w-full">
           <TextInput
             secureTextEntry={!toggleConfirmPass}
-            placeholder="confirm password"
+            placeholder="Confirm Password"
             value={confirmPass}
-            onChangeText={(text) => {
-              setRegisterDetails((prevData) => {
-                return { ...prevData, confirmPass: text };
-              });
-            }}
+            onChangeText={(text) =>
+              setRegisterDetails((prev) => ({ ...prev, confirmPass: text }))
+            }
             className=" border-[0.5px] mb-4 rounded-md p-3"
           />
           <View className="absolute right-3 top-3">
@@ -90,13 +110,15 @@ const RegisterBox = ({
             </Pressable>
           </View>
         </View>
+        {/* {error && (
+          <Text className="text-red-500 mb-2">{error}</Text>
+        )} */}
         <CustomButton
           containerStyles="min-h-[50px] rounded-md bg-gray-800"
           textStyles="text-white"
-          title="Register"
-          onPress={() =>
-            console.log({ email, username, password, confirmPass })
-          }
+          title={loading ? "Registering..." : "Register"}
+          onPress={handleRegisterUser}
+          disabled={loading}
         ></CustomButton>
       </View>
     </View>

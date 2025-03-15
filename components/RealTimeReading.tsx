@@ -4,7 +4,8 @@ import Svg, { Circle, Rect, Path, Line } from "react-native-svg";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 
 export interface RTC {
-  batteryStatus: number;
+  batteryPercentage: number;
+  batteryVoltage: number;
   solar: {
     voltage: number;
     current: number;
@@ -17,12 +18,14 @@ export interface RTC {
   };
   compostContainerOne: {
     methane: number;
-    temperature: number;
+    temperatureIn: number;
+    temperatureOut: number;
     moisture: number;
   };
   compostContainerTwo: {
     methane: number;
-    temperature: number;
+    temperatureIn: number;
+    temperatureOut: number;
     moisture: number;
   };
   timestamp: Date;
@@ -30,7 +33,7 @@ export interface RTC {
 
 interface Props {
   selectedReading: string | null;
-  realTimeData: RTC | undefined;
+  realTimeData: RTC | null;
 }
 
 const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
@@ -42,18 +45,18 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
   };
 
   // Function for circular progress bar
-  const CircleProgress = ({ 
-    percentage, 
-    radius = 40, 
-    strokeWidth = 10, 
-    color = "#4ade80", 
+  const CircleProgress = ({
+    percentage,
+    radius = 40,
+    strokeWidth = 10,
+    color = "#4ade80",
     label,
     value,
-    unit = ""
-  }: { 
-    percentage: number; 
-    radius?: number; 
-    strokeWidth?: number; 
+    unit = "",
+  }: {
+    percentage: number;
+    radius?: number;
+    strokeWidth?: number;
     color?: string;
     label?: string;
     value: number;
@@ -61,14 +64,20 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
   }) => {
     const circumference = 2 * Math.PI * radius;
     const progress = circumference - (percentage / 100) * circumference;
-    
+
     return (
       <View className="items-center justify-center my-2">
-        <Svg height={(radius + strokeWidth) * 2} width={(radius + strokeWidth) * 2} viewBox={`0 0 ${(radius + strokeWidth) * 2} ${(radius + strokeWidth) * 2}`}>
+        <Svg
+          height={(radius + strokeWidth) * 2}
+          width={(radius + strokeWidth) * 2}
+          viewBox={`0 0 ${(radius + strokeWidth) * 2} ${
+            (radius + strokeWidth) * 2
+          }`}
+        >
           {/* Background circle */}
           <Circle
-            cx={(radius + strokeWidth)}
-            cy={(radius + strokeWidth)}
+            cx={radius + strokeWidth}
+            cy={radius + strokeWidth}
             r={radius}
             stroke="#334155"
             strokeWidth={strokeWidth}
@@ -76,8 +85,8 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
           />
           {/* Progress circle */}
           <Circle
-            cx={(radius + strokeWidth)}
-            cy={(radius + strokeWidth)}
+            cx={radius + strokeWidth}
+            cy={radius + strokeWidth}
             r={radius}
             stroke={color}
             strokeWidth={strokeWidth}
@@ -85,30 +94,31 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
             strokeDashoffset={progress}
             strokeLinecap="round"
             fill="transparent"
-            transform={`rotate(-90, ${radius + strokeWidth}, ${radius + strokeWidth})`}
+            transform={`rotate(-90, ${radius + strokeWidth}, ${
+              radius + strokeWidth
+            })`}
           />
         </Svg>
         <View className="absolute items-center">
           <Text className="color-white text-[9px] font-bold">
-            {value.toFixed(1)}{unit}
+            {value.toFixed(1)}
+            {unit}
           </Text>
-          {label && (
-            <Text className="color-white text-[7px]">{label}</Text>
-          )}
+          {label && <Text className="color-white text-[7px]">{label}</Text>}
         </View>
       </View>
     );
   };
 
   // Function for gauge visualization
-  const Gauge = ({ 
-    value, 
-    min = 0, 
+  const Gauge = ({
+    value,
+    min = 0,
     max = 100,
     label,
     unit = "",
-    color = "#4ade80"
-  }: { 
+    color = "#4ade80",
+  }: {
     value: number;
     min?: number;
     max?: number;
@@ -118,20 +128,22 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
   }) => {
     const percentage = ((value - min) / (max - min)) * 100;
     const clampedPercentage = Math.min(100, Math.max(0, percentage));
-    
+
     return (
       <View className="mb-4">
         <View className="flex-row justify-between mb-1">
           <Text className="color-white text-[10px]">{label}:</Text>
-          <Text className="color-white font-medium text-[10px]">{value} {unit}</Text>
+          <Text className="color-white font-medium text-[10px]">
+            {value} {unit}
+          </Text>
         </View>
         <View className="h-3 bg-gray-700 rounded-full overflow-hidden">
-          <View 
-            className="h-full rounded-full" 
-            style={{ 
+          <View
+            className="h-full rounded-full"
+            style={{
               backgroundColor: color,
-              width: `${clampedPercentage}%`
-            }} 
+              width: `${clampedPercentage}%`,
+            }}
           />
         </View>
       </View>
@@ -139,50 +151,60 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
   };
 
   // Function for power visualization (solar and TEG)
-  const PowerMonitor = ({ voltage, current, wattage, type }: { voltage: number; current: number; wattage: number; type: string }) => {
+  const PowerMonitor = ({
+    voltage,
+    current,
+    wattage,
+    type,
+  }: {
+    voltage: number;
+    current: number;
+    wattage: number;
+    type: string;
+  }) => {
     // Max values for visualization (adjust based on your expected ranges)
-    const maxWattage = type === 'Solar' ? 20 : 10; // Higher max for solar than TEG
+    const maxWattage = type === "Solar" ? 20 : 10; // Higher max for solar than TEG
     const wattagePercentage = Math.min(100, (wattage / maxWattage) * 100);
-    
+
     return (
       <View className="mb-4">
         <View className="flex-row justify-between items-center mb-6">
           <View className="items-center">
-            <CircleProgress 
-              percentage={wattagePercentage} 
-              radius={35} 
-              strokeWidth={8} 
-              color="#3b82f6" 
+            <CircleProgress
+              percentage={wattagePercentage}
+              radius={35}
+              strokeWidth={8}
+              color="#3b82f6"
               label="Power"
               value={wattage}
               unit="W"
             />
           </View>
-          
+
           <View className="flex-1 mx-2">
             <MaterialCommunityIcons
-              name={type === 'Solar' ? "solar-power" : "flash"}
+              name={type === "Solar" ? "solar-power" : "flash"}
               size={48}
               color="#f59e0b"
-              style={{ alignSelf: 'center' }}
+              style={{ alignSelf: "center" }}
             />
           </View>
-          
+
           <View className="flex-1">
-            <Gauge 
-              value={voltage} 
-              min={0} 
-              max={type === 'Solar' ? 12 : 5} 
-              label="Voltage" 
-              unit="V" 
+            <Gauge
+              value={voltage}
+              min={0}
+              max={type === "Solar" ? 12 : 5}
+              label="Voltage"
+              unit="V"
               color="#60a5fa"
             />
-            <Gauge 
-              value={current} 
-              min={0} 
-              max={type === 'Solar' ? 2 : 1} 
-              label="Current" 
-              unit="A" 
+            <Gauge
+              value={current}
+              min={0}
+              max={type === "Solar" ? 2 : 1}
+              label="Current"
+              unit="A"
               color="#818cf8"
             />
           </View>
@@ -192,9 +214,17 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
   };
 
   // Function for compost container visualization
-  const CompostMonitor = ({ temperature, moisture, methane, id }: { 
-    temperature: number; 
-    moisture: number; 
+  // Function for compost container visualization
+  const CompostMonitor = ({
+    temperatureIn,
+    temperatureOut,
+    moisture,
+    methane,
+    id,
+  }: {
+    temperatureIn: number;
+    temperatureOut: number;
+    moisture: number;
     methane: number;
     id: string;
   }) => {
@@ -203,12 +233,12 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
       if (temp < 40 || temp > 65) return "#ef4444"; // Red for too cold or too hot
       return "#4ade80"; // Green for good range
     };
-    
+
     const getMoistureColor = (m: number) => {
       if (m < 40 || m > 60) return "#ef4444"; // Red for too dry or too wet
       return "#4ade80"; // Green for good range
     };
-    
+
     const getMethaneColor = (m: number) => {
       if (m > 300) return "#ef4444"; // Red for high methane
       if (m > 100) return "#facc15"; // Yellow for medium methane
@@ -216,35 +246,63 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
     };
 
     // Calculate percentages for circular indicators
-    const tempPercentage = Math.min(100, Math.max(0, (temperature / 70) * 100));
+    const tempInPercentage = Math.min(
+      100,
+      Math.max(0, (temperatureIn / 70) * 100)
+    );
+    const tempOutPercentage = Math.min(
+      100,
+      Math.max(0, (temperatureOut / 70) * 100)
+    );
     const moisturePercentage = moisture; // Already a percentage
     const methanePercentage = Math.min(100, Math.max(0, (methane / 500) * 100));
-    
+
     return (
       <View className="p-2">
         <View className="flex-row justify-between items-center mb-4">
           <MaterialCommunityIcons
             name="flower-tulip"
             size={24}
-            color="#f59e0b" />
-          <Text className="color-white text-lg font-bold flex-1">Container {id}</Text>
+            color="#f59e0b"
+          />
+          <Text className="color-white text-lg font-bold flex-1">
+            Container {id}
+          </Text>
         </View>
-        
+
         <View className="bg-gray-800 rounded-lg p-4">
-          <View className="flex-row justify-between">
-            <View className="items-center flex-1">
+          <View className="flex-row flex-wrap justify-around">
+            
+            {/* Changed to flex-wrap */}
+            <View className="items-center w-1/2 mb-4">
+              
+              {/* Added width and margin */}
               <CircleProgress
-                percentage={tempPercentage}
+                percentage={tempInPercentage}
                 radius={30}
                 strokeWidth={6}
-                color={getTempColor(temperature)}
-                label="Temp"
-                value={temperature}
+                color={getTempColor(temperatureIn)}
+                label="Internal °C"
+                value={temperatureIn}
                 unit="°C"
               />
             </View>
-            
-            <View className="items-center flex-1">
+            <View className="items-center w-1/2 mb-4">
+              
+              {/* Added width and margin */}
+              <CircleProgress
+                percentage={tempOutPercentage}
+                radius={30}
+                strokeWidth={6}
+                color={getTempColor(temperatureOut)}
+                label="External °C"
+                value={temperatureOut}
+                unit="°C"
+              />
+            </View>
+            <View className="items-center w-1/2 mb-4">
+              
+              {/* Added width and margin */}
               <CircleProgress
                 percentage={moisturePercentage}
                 radius={30}
@@ -255,8 +313,9 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
                 unit="%"
               />
             </View>
-            
-            <View className="items-center flex-1">
+            <View className="items-center w-1/2 mb-4">
+              
+              {/* Added width and margin */}
               <CircleProgress
                 percentage={methanePercentage}
                 radius={30}
@@ -274,20 +333,32 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
   };
 
   // Battery component
-  const BatteryCircleProgress = ({ percentage }: { percentage: number }) => {
+  const BatteryCircleProgress = ({
+    percentage,
+    voltage,
+  }: {
+    percentage: number;
+    voltage: number;
+  }) => {
     const radius = 50;
     const strokeWidth = 12;
     const circumference = 2 * Math.PI * radius;
     const progress = circumference - (percentage / 100) * circumference;
     const color = getBatteryColor(percentage);
-    
+
     return (
       <View className="items-center justify-center my-4">
-        <Svg height={(radius + strokeWidth) * 2} width={(radius + strokeWidth) * 2} viewBox={`0 0 ${(radius + strokeWidth) * 2} ${(radius + strokeWidth) * 2}`}>
+        <Svg
+          height={(radius + strokeWidth) * 2}
+          width={(radius + strokeWidth) * 2}
+          viewBox={`0 0 ${(radius + strokeWidth) * 2} ${
+            (radius + strokeWidth) * 2
+          }`}
+        >
           {/* Background circle */}
           <Circle
-            cx={(radius + strokeWidth)}
-            cy={(radius + strokeWidth)}
+            cx={radius + strokeWidth}
+            cy={radius + strokeWidth}
             r={radius}
             stroke="#334155"
             strokeWidth={strokeWidth}
@@ -295,8 +366,8 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
           />
           {/* Progress circle */}
           <Circle
-            cx={(radius + strokeWidth)}
-            cy={(radius + strokeWidth)}
+            cx={radius + strokeWidth}
+            cy={radius + strokeWidth}
             r={radius}
             stroke={color}
             strokeWidth={strokeWidth}
@@ -304,17 +375,18 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
             strokeDashoffset={progress}
             strokeLinecap="round"
             fill="transparent"
-            transform={`rotate(-90, ${radius + strokeWidth}, ${radius + strokeWidth})`}
+            transform={`rotate(-90, ${radius + strokeWidth}, ${
+              radius + strokeWidth
+            })`}
           />
         </Svg>
         <View className="absolute items-center">
-          <MaterialCommunityIcons 
-            name="battery" 
-            size={28} 
-            color={color} 
-          />
+          <MaterialCommunityIcons name="battery" size={28} color={color} />
           <Text className="color-white text-xl font-bold mt-1">
             {percentage}%
+          </Text>
+          <Text className="color-white text-sm font-semibold">
+            {voltage.toFixed(1)}V
           </Text>
         </View>
       </View>
@@ -323,23 +395,32 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
 
   return (
     <View className="flex-1">
-      {selectedReading === "Battery" && (
+      {selectedReading === "BATTERY" && (
         <View className="flex-1 p-4 items-center justify-center">
-          <Text className="color-white mb-4 font-bold text-center text-xl">Battery Status</Text>
-          <BatteryCircleProgress percentage={realTimeData?.batteryStatus || 0} />
+          <Text className="color-white mb-4 font-bold text-center text-xl">
+            Battery Status
+          </Text>
+          <BatteryCircleProgress
+            percentage={realTimeData?.batteryPercentage || 0}
+            voltage={realTimeData?.batteryVoltage || 0}
+          />
           <View className="mt-6 bg-gray-800 rounded-lg p-4 w-full">
             <Text className="color-white text-center">
-              {realTimeData?.batteryStatus || 0 >= 70 ? "Battery level is good" : 
-               realTimeData?.batteryStatus || 0 >= 30 ? "Battery level is moderate" : 
-               "Battery level is low"}
+              {realTimeData?.batteryPercentage || 0 >= 70
+                ? "Battery level is good"
+                : realTimeData?.batteryPercentage || 0 >= 30
+                ? "Battery level is moderate"
+                : "Battery level is low"}
             </Text>
           </View>
         </View>
       )}
-      
-      {selectedReading === "Solar" && (
+
+      {selectedReading === "SOLAR" && (
         <View className="flex-1 p-4">
-          <Text className="color-white mb-4 font-bold text-center text-xl">Solar Power</Text>
+          <Text className="color-white mb-4 font-bold text-center text-xl">
+            Solar Power
+          </Text>
           <PowerMonitor
             voltage={realTimeData?.solar.voltage || 0}
             current={realTimeData?.solar.current || 0}
@@ -347,19 +428,25 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
             type="Solar"
           />
           <View className="bg-gray-800 rounded-lg p-4 mt-4">
-            <Text className="color-white font-medium mb-2">Solar Performance</Text>
+            <Text className="color-white font-medium mb-2">
+              Solar Performance
+            </Text>
             <Text className="color-white">
-              {realTimeData?.solar.wattage || 0 > 10 ? "High solar energy production" : 
-               realTimeData?.solar.wattage || 0 > 5 ? "Moderate solar energy production" : 
-               "Low solar energy production"}
+              {realTimeData?.solar.wattage || 0 > 10
+                ? "High solar energy production"
+                : realTimeData?.solar.wattage || 0 > 5
+                ? "Moderate solar energy production"
+                : "Low solar energy production"}
             </Text>
           </View>
         </View>
       )}
-      
+
       {selectedReading === "TEG" && (
         <View className="flex-1 p-4">
-          <Text className="color-white mb-4 font-bold text-center text-xl">TEG Power</Text>
+          <Text className="color-white mb-4 font-bold text-center text-xl">
+            TEG Power
+          </Text>
           <PowerMonitor
             voltage={realTimeData?.teg.voltage || 0}
             current={realTimeData?.teg.current || 0}
@@ -367,21 +454,30 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
             type="TEG"
           />
           <View className="bg-gray-800 rounded-lg p-4 mt-4">
-            <Text className="color-white font-medium mb-2">TEG Performance</Text>
+            <Text className="color-white font-medium mb-2">
+              TEG Performance
+            </Text>
             <Text className="color-white">
-              {realTimeData?.teg.wattage || 0 > 5 ? "High TEG energy production" : 
-               realTimeData?.teg.wattage || 0 > 2 ? "Moderate TEG energy production" : 
-               "Low TEG energy production"}
+              {realTimeData?.teg.wattage || 0 > 5
+                ? "High TEG energy production"
+                : realTimeData?.teg.wattage || 0 > 2
+                ? "Moderate TEG energy production"
+                : "Low TEG energy production"}
             </Text>
           </View>
         </View>
       )}
-      
-      {selectedReading === "Compost1" && (
+
+      {selectedReading === "COMPOST1" && (
         <View className="flex-1 p-4">
-          <Text className="color-white mb-4 font-bold text-center text-xl">Compost Storage 1</Text>
+          <Text className="color-white mb-4 font-bold text-center text-xl">
+            Compost Storage 1
+          </Text>
           <CompostMonitor
-            temperature={realTimeData?.compostContainerOne.temperature || 0}
+            temperatureIn={realTimeData?.compostContainerOne.temperatureIn || 0}
+            temperatureOut={
+              realTimeData?.compostContainerOne.temperatureOut || 0
+            }
             moisture={realTimeData?.compostContainerOne.moisture || 0}
             methane={realTimeData?.compostContainerOne.methane || 0}
             id="1"
@@ -389,29 +485,51 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
           <View className="bg-gray-800 rounded-lg p-4 mt-4">
             <Text className="color-white font-medium mb-2">Status Summary</Text>
             <Text className="color-white mb-1">
-              Temperature: {realTimeData?.compostContainerOne.temperature || 0 < 40 ? "Too cold" : 
-                           realTimeData?.compostContainerOne.temperature || 0 > 65 ? "Too hot" : 
-                           "Optimal"}
+              Internal Temp:
+              {realTimeData?.compostContainerOne.temperatureIn || 0 < 40
+                ? "Too cold"
+                : realTimeData?.compostContainerOne.temperatureIn || 0 > 65
+                ? "Too hot"
+                : "Optimal"}
             </Text>
             <Text className="color-white mb-1">
-              Moisture: {realTimeData?.compostContainerOne.moisture || 0 < 40 ? "Too dry" : 
-                        realTimeData?.compostContainerOne.moisture || 0 > 60 ? "Too wet" : 
-                        "Optimal"}
+              External Temp:
+              {realTimeData?.compostContainerOne.temperatureOut || 0 < 40
+                ? "Too cold"
+                : realTimeData?.compostContainerOne.temperatureOut || 0 > 65
+                ? "Too hot"
+                : "Optimal"}
+            </Text>
+            <Text className="color-white mb-1">
+              Moisture:
+              {realTimeData?.compostContainerOne.moisture || 0 < 40
+                ? "Too dry"
+                : realTimeData?.compostContainerOne.moisture || 0 > 60
+                ? "Too wet"
+                : "Optimal"}
             </Text>
             <Text className="color-white">
-              Methane: {realTimeData?.compostContainerOne.methane || 0 > 300 ? "High (action required)" : 
-                       realTimeData?.compostContainerOne.methane || 0 > 100 ? "Moderate" : 
-                       "Low (good)"}
+              Methane:
+              {realTimeData?.compostContainerOne.methane || 0 > 300
+                ? "High (action required)"
+                : realTimeData?.compostContainerOne.methane || 0 > 100
+                ? "Moderate"
+                : "Low (good)"}
             </Text>
           </View>
         </View>
       )}
-      
-      {selectedReading === "Compost2" && (
+
+      {selectedReading === "COMPOST2" && (
         <View className="flex-1 p-4">
-          <Text className="color-white mb-4 font-bold text-center text-xl">Compost Storage 2</Text>
+          <Text className="color-white mb-4 font-bold text-center text-xl">
+            Compost Storage 2
+          </Text>
           <CompostMonitor
-            temperature={realTimeData?.compostContainerTwo.temperature || 0}
+            temperatureIn={realTimeData?.compostContainerTwo.temperatureIn || 0}
+            temperatureOut={
+              realTimeData?.compostContainerTwo.temperatureOut || 0
+            }
             moisture={realTimeData?.compostContainerTwo.moisture || 0}
             methane={realTimeData?.compostContainerTwo.methane || 0}
             id="2"
@@ -419,19 +537,36 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
           <View className="bg-gray-800 rounded-lg p-4 mt-4">
             <Text className="color-white font-medium mb-2">Status Summary</Text>
             <Text className="color-white mb-1">
-              Temperature: {realTimeData?.compostContainerTwo.temperature || 0 < 40 ? "Too cold" : 
-                           realTimeData?.compostContainerTwo.temperature || 0 > 65 ? "Too hot" : 
-                           "Optimal"}
+              Internal Temp:
+              {realTimeData?.compostContainerTwo.temperatureIn || 0 < 40
+                ? "Too cold"
+                : realTimeData?.compostContainerTwo.temperatureIn || 0 > 65
+                ? "Too hot"
+                : "Optimal"}
             </Text>
             <Text className="color-white mb-1">
-              Moisture: {realTimeData?.compostContainerTwo.moisture || 0 < 40 ? "Too dry" : 
-                        realTimeData?.compostContainerTwo.moisture || 0 > 60 ? "Too wet" : 
-                        "Optimal"}
+              External Temp:
+              {realTimeData?.compostContainerTwo.temperatureOut || 0 < 40
+                ? "Too cold"
+                : realTimeData?.compostContainerTwo.temperatureOut || 0 > 65
+                ? "Too hot"
+                : "Optimal"}
+            </Text>
+            <Text className="color-white mb-1">
+              Moisture:
+              {realTimeData?.compostContainerTwo.moisture || 0 < 40
+                ? "Too dry"
+                : realTimeData?.compostContainerTwo.moisture || 0 > 60
+                ? "Too wet"
+                : "Optimal"}
             </Text>
             <Text className="color-white">
-              Methane: {realTimeData?.compostContainerTwo.methane || 0 > 300 ? "High (action required)" : 
-                       realTimeData?.compostContainerTwo.methane || 0 > 100 ? "Moderate" : 
-                       "Low (good)"}
+              Methane:
+              {realTimeData?.compostContainerTwo.methane || 0 > 300
+                ? "High (action required)"
+                : realTimeData?.compostContainerTwo.methane || 0 > 100
+                ? "Moderate"
+                : "Low (good)"}
             </Text>
           </View>
         </View>
@@ -440,8 +575,10 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
   );
 };
 
-// In RealTimeReading.tsx and other components
 export default React.memo(RealTimeReading, (prevProps, nextProps) => {
-  return prevProps.selectedReading === nextProps.selectedReading &&
-         JSON.stringify(prevProps.realTimeData) === JSON.stringify(nextProps.realTimeData);
+  return (
+    prevProps.selectedReading === nextProps.selectedReading &&
+    JSON.stringify(prevProps.realTimeData) ===
+      JSON.stringify(nextProps.realTimeData)
+  );
 });

@@ -1,5 +1,6 @@
 export interface TimeDataProp {
-    batteryStatus: number,
+    batteryPercentage: number,
+    batteryVoltage: number,
     solar: {
       voltage: number,
       current: number,
@@ -12,12 +13,14 @@ export interface TimeDataProp {
     },
     compostContainerOne:{
       methane: number,
-      temperature: number,
+      temperatureIn: number;
+    temperatureOut: number;
       moisture: number,
     },
     compostContainerTwo:{
       methane: number,
-      temperature: number,
+      temperatureIn: number;
+    temperatureOut: number;
       moisture: number,
     },
     timestamp: Date
@@ -40,13 +43,24 @@ export interface TimeDataProp {
   export interface CompostData {
     timestamp: string;
     methane: number;
-    temperature: number;
+    temperatureIn: number;
+    temperatureOut: number;
     moisture: number;
   }
   
   export interface AllSavedDataProp {
     solar: EnergyData[]
     teg: EnergyData[]
-    compostOne: CompostData[]
-    compostTwo: CompostData[]
+    compostContainerOne: CompostData[]
+    compostContainerTwo: CompostData[]
+  }
+
+  export interface EnergySavedDataProp {
+    solar: EnergyData[]
+    teg: EnergyData[]
+  }
+
+  export interface CompostSavedDataProp {
+    compostContainerOne: CompostData[]
+    compostContainerTwo: CompostData[]
   }

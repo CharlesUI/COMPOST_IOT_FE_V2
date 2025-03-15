@@ -3,9 +3,12 @@ import { Tabs } from "expo-router";
 import Colors from "@/constants/Colors";
 import { MaterialCommunityIcons, Entypo } from "@expo/vector-icons";
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useUser } from "@/context/UserContext";
 
 
 const TabsLayout = () => {
+  const { user } = useUser();
+
   return (
     <Tabs
       screenOptions={{
@@ -31,6 +34,7 @@ const TabsLayout = () => {
       <Tabs.Screen
         name="Device"
         options={{
+          // href: null, // disable the tab
           title: "Device",
           tabBarLabel: "Device",
           tabBarIcon: ({ color }) => {
