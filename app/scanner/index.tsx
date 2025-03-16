@@ -86,6 +86,8 @@ export default function Home() {
   const handleBarcodeScanned = ({ data }: any) => {
     // No need for any type here
     console.log("data", data);
+    console.log("user", user);
+    
     if (qrLock.current) {
       // Check if a scan is already in progress
       return;
@@ -94,6 +96,11 @@ export default function Home() {
       setHasScanned(true);
       qrLock.current = true;
 
+      if(user?._id === undefined || user?.devices.length < 0 || user?.email === undefined || user?.username === undefined) {
+        Alert.alert("Error", "User not found.");
+        return; // Important: Return to prevent further execution
+      }
+      
       if (!validDeviceIds.includes(data)) {
         router.back();
         Alert.alert("Error", "Invalid QR Code.");
@@ -108,14 +115,15 @@ export default function Home() {
         return; // Important: Return to prevent further execution
       }
 
+
       Alert.alert("QR Code Result", data, [
         {
           text: "OK",
           onPress: () => {
-            router.back();
             handleAddDevice(data);
             setHasScanned(false); // Allow scanning again
             qrLock.current = false;
+            router.back();
           },
         },
       ]);

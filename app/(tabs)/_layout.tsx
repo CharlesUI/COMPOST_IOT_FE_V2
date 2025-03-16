@@ -9,6 +9,14 @@ import { useUser } from "@/context/UserContext";
 const TabsLayout = () => {
   const { user } = useUser();
 
+  const disabler = {
+    href: null
+  }
+
+  const userLoggedIn = user ? false : true;
+
+  const userTab = userLoggedIn && disabler;
+
   return (
     <Tabs
       screenOptions={{
@@ -35,6 +43,8 @@ const TabsLayout = () => {
         name="Device"
         options={{
           // href: null, // disable the tab
+          ...
+          userTab,
           title: "Device",
           tabBarLabel: "Device",
           tabBarIcon: ({ color }) => {

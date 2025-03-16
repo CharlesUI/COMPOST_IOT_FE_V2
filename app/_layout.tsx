@@ -15,6 +15,10 @@ const RootLayout = () => {
               name="(modal)/userLog"
               options={{ headerShown: false, presentation: "modal" }}
             />
+            <Stack.Screen
+              name="(modal)/Notification"
+              options={{ headerShown: false, presentation: "modal" }}
+            />
             <Stack.Screen name="+not-found" />
             <Stack.Screen
               name="scanner/index"

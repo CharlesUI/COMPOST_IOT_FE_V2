@@ -51,6 +51,7 @@ const HomePage = () => {
   };
 
   const handleAddDevice = async (text: string | null) => {
+    console.log("Check if user is logged in", user);
     if (!text) {
       Alert.alert("Error", "Please enter a device ID.");
       return;
@@ -59,6 +60,11 @@ const HomePage = () => {
     if (text.length !== 10) {
       Alert.alert("Error", "Device ID must be 10 characters long.");
       setDeviceText("");
+      return;
+    }
+
+    if(user?._id === undefined || user?.devices.length < 0 || user?.email === undefined || user?.username === undefined) {
+      Alert.alert("Error", "User not found. Please log in.");
       return;
     }
 
@@ -83,10 +89,10 @@ const HomePage = () => {
 
   return (
     <SafeAreaView className="flex-1 w-full">
-      <HeaderSection headerText="Compost IoT" title="Log In" />
+      <HeaderSection headerText="CompostSense" title="Log In" />
       <View className="flex-1 bg-[#2F2C2C]">
-        <View className="mt-10 mb-2 w-full flex-row justify-between px-5">
-          <Text className=" font-bold p-1 color-white">
+        <View className="mt-10 mb-[4px] w-full flex-row justify-between px-5">
+          <Text className="text-[13px] font-semibold p-1 color-white">
             Compost Monitoring Server
           </Text>
         </View>
@@ -99,7 +105,7 @@ const HomePage = () => {
                 className="w-full"
                 onPress={() => console.log("HELLO MUNA")}
               >
-                <Text className=" text-justify">
+                <Text className="text-[12px] font-medium text-justify">
                   Sign in to your compost IoT account and monitor your device.
                 </Text>
               </Pressable>
@@ -109,7 +115,7 @@ const HomePage = () => {
           <View className="w-[92.5%] bg-slate-200 rounded-lg mx-2">
             <View className=" px-5 py-4 border-gray-800">
               <Pressable className=" mb-2">
-                <Text>Enter Device Number:</Text>
+                <Text className="text-[12px] font-medium">Enter Device Number:</Text>
               </Pressable>
               <View className="flex justify-around">
                 <TextInput
@@ -117,7 +123,7 @@ const HomePage = () => {
                   placeholderTextColor="gray"
                   value={deviceText}
                   onChangeText={(text) => setDeviceText(text)}
-                  className=" border-[0.5px] mb-3 rounded-md p-2"
+                  className="font-medium border-[0.5px] mb-3 rounded-md p-2"
                 />
                 <View className="flex flex-row gap-2">
                   <CustomButton
@@ -139,7 +145,7 @@ const HomePage = () => {
         </View>
 
         {/* The display of added devices should now reflect the user's context */}
-        {user ? (
+        {user?.devices.length > 0 ? (
           <View className="flex-1">
             <AddedDevice />
           </View>
