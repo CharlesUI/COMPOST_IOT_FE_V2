@@ -18,17 +18,6 @@ const PointerLabelComponent = ({ items, selectedParameter, readingTypeLabels }: 
                 alignItems: "center",
             }}
         >
-            <Text
-                style={{
-                    color: "white",
-                    fontWeight: "bold",
-                    fontSize: 12,
-                    marginBottom: 3,
-                    textAlign: "center",
-                }}
-            >
-                {items && items[0]?.timeStamp ? format(items[0]?.timeStamp, "dd/MM HH:mm") : "No Time Data"}
-            </Text>
 
             <View
                 style={{

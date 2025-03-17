@@ -63,7 +63,7 @@ const HomePage = () => {
       return;
     }
 
-    if(user?._id === undefined || user?.devices.length < 0 || user?.email === undefined || user?.username === undefined) {
+    if(user?._id === undefined || user?.devices?.length < 0 || user?.email === undefined || user?.username === undefined) {
       Alert.alert("Error", "User not found. Please log in.");
       return;
     }
@@ -145,7 +145,7 @@ const HomePage = () => {
         </View>
 
         {/* The display of added devices should now reflect the user's context */}
-        {user?.devices.length > 0 ? (
+        {user?.devices?.length > 0 ? (
           <View className="flex-1">
             <AddedDevice />
           </View>

@@ -25,6 +25,7 @@ interface LineGraphProps {
   chartData: any; // Use the combined chartData prop
   isLoading: boolean;
   isDeviceCompostSelected: boolean;
+  isSolarSelected: boolean;
   isDeviceEnergySelected: boolean;
   deviceParameter: string | undefined;
   getMaxValue: (deviceParameter: string) => 20 | 5 | 100 | 15 | 80;
@@ -39,6 +40,7 @@ const LineGraphDataVisual = ({
   chartData, // Using combined chartData prop
   isLoading,
   isDeviceCompostSelected,
+  isSolarSelected,
   isDeviceEnergySelected,
   deviceParameter,
   getMaxValue,
@@ -46,21 +48,30 @@ const LineGraphDataVisual = ({
   handleParameterChange,
 }: LineGraphProps) => {
   console.log("--------------------------------------------------");
-  console.log("  LineGraphDataVisual - Props Received: ");
-  console.log("  deviceTime:", deviceTime);
-  console.log("  deviceParameter:", deviceParameter);
-  console.log("  COMPOST:", isDeviceCompostSelected);
-  console.log("  ENERGY:", isDeviceEnergySelected);
-  console.log("  isLoading:", isLoading);
+  console.log("  LineGraphDataVisual - Props Received: ");
+  console.log("  deviceTime:", deviceTime);
+  console.log("  deviceParameter:", deviceParameter);
+  console.log("  COMPOST:", isDeviceCompostSelected);
+  console.log("  ENERGY:", isDeviceEnergySelected);
+  console.log("  isLoading:", isLoading);
   console.log("--------------------------------------------------");
-  console.log("  SOLAR:", chartData?.solar?.length);
+
+  // console.log(" CHART DATA: ", chartData);
+  console.log(" SOLAR:", chartData?.solar?.length);
   console.log("--------------------------------------------------");
-  console.log("  TEG:", chartData?.teg?.length);
+  console.log(" TEGONE:", chartData?.tegOne?.length);
   console.log("--------------------------------------------------");
-  console.log("  COMPOST1:", chartData?.compostContainerOne?.length);
+  console.log(" TEGTWO:", chartData?.tegTwo?.length);
   console.log("--------------------------------------------------");
-  console.log("  COMPOST2:", chartData?.compostContainerTwo?.length);
+  console.log(" COMPOST1:", chartData?.compostContainerOne?.length);
   console.log("--------------------------------------------------");
+  console.log(" COMPOST2:", chartData?.compostContainerTwo?.length);
+  console.log("--------------------------------------------------");
+
+  // Console log the length of solar data
+  useEffect(() => {
+    console.log("Solar Data Length:", chartData?.solar?.length);
+  }, [chartData?.solar]);
 
   // Add these state variables before the return statement (around line 41)
   const [visibleStartIndex, setVisibleStartIndex] = useState(0);
@@ -68,14 +79,18 @@ const LineGraphDataVisual = ({
 
   // Add this memoized data preparation before the return statement
   const visibleChartData1 = useMemo(() => {
-    return isDeviceEnergySelected
-      ? chartData?.solar ?? []
-      : chartData?.compostContainerOne ?? [];
-  }, [chartData, isDeviceEnergySelected, visibleStartIndex, visibleEndIndex]);
+    if (isSolarSelected) {
+      return chartData?.solar ?? [];
+    } else if (isDeviceEnergySelected) {
+      return chartData?.tegOne ?? []; // Use tegOne for data1 when energy is selected
+    } else {
+      return chartData?.compostContainerOne ?? [];
+    }
+  }, [chartData, isDeviceEnergySelected, isSolarSelected, visibleStartIndex, visibleEndIndex]);
 
   const visibleChartData2 = useMemo(() => {
     return isDeviceEnergySelected
-      ? chartData?.teg ?? []
+      ? chartData?.tegTwo ?? []// Use tegTwo for data2 when energy is selected
       : chartData?.compostContainerTwo ?? [];
   }, [chartData, isDeviceEnergySelected, visibleStartIndex, visibleEndIndex]);
 
@@ -83,10 +98,12 @@ const LineGraphDataVisual = ({
   const handleChartScroll = useCallback(
     (event: any) => {
       const scrollX = event.nativeEvent.contentOffset.x;
-      const dataLength = isDeviceEnergySelected
+      const dataLength = isSolarSelected
+        ? (chartData?.solar ?? []).length
+        : isDeviceEnergySelected
         ? Math.max(
-            (chartData?.solar ?? []).length,
-            (chartData?.teg ?? []).length
+            (chartData?.tegOne ?? []).length,
+            (chartData?.tegTwo ?? []).length
           )
         : Math.max(
             (chartData?.compostContainerOne ?? []).length,
@@ -101,7 +118,7 @@ const LineGraphDataVisual = ({
       setVisibleStartIndex(newStartIndex);
       setVisibleEndIndex(newEndIndex);
     },
-    [chartData, isDeviceEnergySelected]
+    [chartData, isDeviceEnergySelected, isSolarSelected]
   );
 
   const [indicatorColor1, setIndicatorColor1] = useState("blue"); // State for indicator colors
@@ -135,11 +152,13 @@ const LineGraphDataVisual = ({
       default:
         return "";
     }
-  }, [deviceTime, isDeviceEnergySelected, isDeviceCompostSelected]);
+  }, [deviceTime, isDeviceEnergySelected, isDeviceCompostSelected, isSolarSelected]);
 
   const getReadingType = () => {
-    if (isDeviceEnergySelected && !isDeviceCompostSelected) {
-      return { data1Label: "Solar", data2Label: "TEG" };
+    if (isSolarSelected) {
+      return { data1Label: "Solar", data2Label: "" };
+    } else if (isDeviceEnergySelected && !isDeviceCompostSelected) {
+      return { data1Label: "TEG 1", data2Label: "TEG 2" }; // Updated labels to reflect the change
     } else if (!isDeviceEnergySelected && isDeviceCompostSelected) {
       return { data1Label: "Compost 1", data2Label: "Compost 2" };
     } else {
@@ -149,7 +168,7 @@ const LineGraphDataVisual = ({
 
   const readingTypeLabels = useMemo(
     () => getReadingType(),
-    [isDeviceEnergySelected, isDeviceCompostSelected]
+    [isDeviceEnergySelected, isDeviceCompostSelected, isSolarSelected]
   );
 
   const adjustedMaxValue = useMemo(() => {
@@ -163,8 +182,9 @@ const LineGraphDataVisual = ({
     return (
       (chartData?.compostContainerOne?.length ?? 0) > 0 ||
       (chartData?.compostContainerTwo?.length ?? 0) > 0 ||
-      (chartData?.solar?.length ?? 0) > 0 ||
-      (chartData?.teg?.length ?? 0) > 0
+      (chartData?.tegOne?.length ?? 0) > 0 ||
+      (chartData?.tegTwo?.length ?? 0) > 0 ||
+      (chartData?.solar?.length ?? 0) > 0
     );
   }, [chartData]);
 
@@ -181,24 +201,36 @@ const LineGraphDataVisual = ({
   }, [lengthChecker, isLoading, fadeAnim]);
 
   useEffect(() => {
-    if (isDeviceEnergySelected) {
-      setIndicatorColor1("#eec643");
-      setIndicatorColor2("#10B04B");
+    if (isSolarSelected) {
+      setIndicatorColor1("#eec643"); // Solar color (yellowish)
+      setIndicatorColor2("transparent"); // No second line for solar
+    } else if (isDeviceEnergySelected) {
+      setIndicatorColor1("#10B04B"); // TegOne color
+      setIndicatorColor2("#8A2BE2"); // TegTwo color (complementary)
     } else if (isDeviceCompostSelected) {
       setIndicatorColor1("#eec643");
       setIndicatorColor2("#10B04B");
     }
-  }, [isDeviceEnergySelected, isDeviceCompostSelected]);
+  }, [isDeviceEnergySelected, isDeviceCompostSelected, isSolarSelected]);
 
   const lineChartColor = useMemo(() => {
-    if (isDeviceEnergySelected) {
+    if (isSolarSelected) {
       return {
-        lineColor1: "#eec643", // Solar
-        lineColor2: "#10B04B", // TEG
+        lineColor1: "#eec643", // Solar - Yellowish
+        lineColor2: "transparent",
         startFillColor1: "#fff763",
         endFillColor1: "rgba(20,85,81,0.01)",
-        startFillColor2: "rgba(20,105,81,0.3)",
-        endFillColor2: "rgba(20,85,81,0.01)",
+        startFillColor2: "transparent",
+        endFillColor2: "transparent",
+      };
+    } else if (isDeviceEnergySelected) {
+      return {
+        lineColor1: "#10B04B", // TEG One
+        lineColor2: "#8A2BE2", // TEG Two - Complementary color
+        startFillColor1: "rgba(20,105,81,0.3)",
+        endFillColor1: "rgba(20,85,81,0.01)",
+        startFillColor2: "rgba(138, 43, 226, 0.3)", // Complementary fill color
+        endFillColor2: "rgba(138, 43, 226, 0.01)", // Complementary fill color
       };
     } else if (isDeviceCompostSelected) {
       return {
@@ -219,12 +251,12 @@ const LineGraphDataVisual = ({
         endFillColor2: "rgba(20,85,81,0.01)",
       };
     }
-  }, [isDeviceEnergySelected, isDeviceCompostSelected]);
+  }, [isDeviceEnergySelected, isDeviceCompostSelected, isSolarSelected]);
 
   const chartProps = useMemo(
     () => ({
       data: visibleChartData1,
-      data2: visibleChartData2,
+      data2: isSolarSelected ? undefined : visibleChartData2, // Conditionally render data2
       noOfSections: 5,
       height: 300,
       showVerticalLines: true,
@@ -305,11 +337,12 @@ const LineGraphDataVisual = ({
       lineChartColor,
       readingTypeLabels,
       handleChartScroll,
+      isSolarSelected,
     ]
   );
 
   return (
-    <View className="flex-1 mt-6">
+    <View className="flex-1 mt-4">
       <View className="pb-4 flex-1 bg-[#2F2C2C]">
         {deviceTime && lengthChecker && !isLoading && (
           <View>
@@ -331,16 +364,18 @@ const LineGraphDataVisual = ({
                     />
                   </View>
 
-                  <View className="w-full flex-row justify-end items-center">
-                    <Text className="text-[12px] font-semibold color-white">
-                      {readingTypeLabels.data2Label}
-                    </Text>
+                  {readingTypeLabels.data2Label !== "" && (
+                    <View className="w-full flex-row justify-end items-center">
+                      <Text className="text-[12px] font-semibold color-white">
+                        {readingTypeLabels.data2Label}
+                      </Text>
 
-                    <View
-                      className="w-4 h-4 rounded-full ml-4" // Added margin
-                      style={{ backgroundColor: indicatorColor2 }}
-                    />
-                  </View>
+                      <View
+                        className="w-4 h-4 rounded-full ml-4" // Added margin
+                        style={{ backgroundColor: indicatorColor2 }}
+                      />
+                    </View>
+                  )}
                 </View>
               </View>
             </View>
@@ -349,9 +384,7 @@ const LineGraphDataVisual = ({
               <Animated.View style={{ opacity: fadeAnim }}>
                 {!isLoading && lengthChecker ? (
                   visibleChartData1 &&
-                  visibleChartData2 &&
-                  visibleChartData1.length > 0 &&
-                  visibleChartData2.length > 0 ? (
+                  visibleChartData1.length > 0 ? (
                     <LineChart
                       {...chartProps}
                       hideDataPoints1
@@ -375,7 +408,7 @@ const LineGraphDataVisual = ({
             </View>
             {(isDeviceEnergySelected || isDeviceCompostSelected) && (
               <View className="w-full justify-center items-center bg-[#2F2C2C]">
-                <View className="w-[72.5%] pt-2 flex-row flex justify-between items-center">
+                <View className="w-[72.5%] gap-2 pt-2 flex-row flex justify-between items-center">
                   {(isDeviceEnergySelected
                     ? ["voltage", "current", "wattage"]
                     : ["methane", "moisture", "temperatureIn", "temperatureOut"]
@@ -387,13 +420,32 @@ const LineGraphDataVisual = ({
                         param === "temperatureIn"
                           ? "Temp In"
                           : param === "temperatureOut"
-                          ? "Temp Out"
-                          : param.charAt(0).toUpperCase() + param.slice(1)
+                            ? "Temp Out"
+                            : param.charAt(0).toUpperCase() + param.slice(1)
                       }
                       textStyles="text-[8px] font-bold color-white"
-                      containerStyles={`w-1/4 py-2 align-center border-2 bg-gray-800 ${
+                      containerStyles={`flex-1 py-2 align-center border-2 bg-gray-800 ${
                         deviceParameter === param
                           ? "border-[#10B04B] border-2"
+                          : "border-gray-100 border-[0.5px]"
+                      }`}
+                    />
+                  ))}
+                </View>
+              </View>
+            )}
+            {isSolarSelected && (
+              <View className="w-full justify-center items-center bg-[#2F2C2C]">
+                <View className="w-[72.5%] gap-2 pt-2 flex-row flex justify-between items-center">
+                  {["voltage", "current", "wattage"].map((param) => (
+                    <CustomButton
+                      key={param}
+                      onPress={() => handleParameterChange(param)}
+                      title={param.charAt(0).toUpperCase() + param.slice(1)}
+                      textStyles="text-[8px] font-bold color-white"
+                      containerStyles={`flex-1 py-2 align-center border-2 bg-gray-800 ${
+                        deviceParameter === param
+                          ? "border-[#eec643] border-2"
                           : "border-gray-100 border-[0.5px]"
                       }`}
                     />
@@ -414,6 +466,7 @@ export default React.memo(LineGraphDataVisual, (prevProps, nextProps) => {
     prevProps.deviceTime === nextProps.deviceTime &&
     prevProps.isLoading === nextProps.isLoading &&
     prevProps.isDeviceCompostSelected === nextProps.isDeviceCompostSelected &&
+    prevProps.isSolarSelected === nextProps.isSolarSelected &&
     prevProps.isDeviceEnergySelected === nextProps.isDeviceEnergySelected &&
     prevProps.deviceParameter === nextProps.deviceParameter &&
     prevProps.chartData === nextProps.chartData

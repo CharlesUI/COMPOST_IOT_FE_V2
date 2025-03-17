@@ -5,13 +5,7 @@ import React, {
   useCallback,
   useRef,
 } from "react";
-import {
-  View,
-  Alert,
-  Text,
-  ActivityIndicator,
-  ScrollView,
-} from "react-native";
+import { View, Alert, Text, ActivityIndicator, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 const { debounce } = require("lodash");
@@ -62,12 +56,13 @@ const Device = () => {
   }>({});
 
   // **UI State - Device Type, Time, Parameter Selections (Keep these):**
-  const [deviceType, setDeviceType] = useState<string>("energy"); // Initial: Energy
+  const [deviceType, setDeviceType] = useState<"energy" | "compost" | "solar">(
+    "energy"
+  ); // Initial: Energy
   const [deviceTime, setDeviceTime] = useState<string>("day"); // Initial: Day
   const [deviceParameter, setDeviceParameter] = useState<string>("voltage"); // Initial: Voltage
   const [selectedReading, setSelectedReading] = useState<string>("BATTERY");
   const [isInitialDataLoaded, setIsInitialDataLoaded] = useState(false);
-  const [isChartDataLoaded, setIsChartDataLoaded] = useState(false);
 
   console.log(
     `${API_URL_BASE}/device/${deviceNumber}/saved-time-frame?timeFrame=${deviceTime}&dataType=${deviceType}&parameter=${deviceParameter}`
@@ -103,7 +98,14 @@ const Device = () => {
       setIsLoading(false);
       console.log("fetchRealTimeData FINALLY - isLoading:", isLoading);
     }
-  }, [deviceNumber, setIsLoading, setError, setRealTimeData, token, API_URL_BASE]);
+  }, [
+    deviceNumber,
+    setIsLoading,
+    setError,
+    setRealTimeData,
+    token,
+    API_URL_BASE,
+  ]);
 
   // **Refactored fetchChartData to use cache and handle all combinations:**
   const fetchChartData = useCallback(
@@ -115,7 +117,6 @@ const Device = () => {
       }
 
       setIsLoading(true);
-      setIsChartDataLoaded(false);
       setError(null);
 
       try {
@@ -139,15 +140,12 @@ const Device = () => {
         const responseData = await response.json();
         const rawData = responseData.data; // API returns data in responseData.data
 
-        // **No need for frontend processing here anymore **
-        // const intervalMins = TIME_INTERVALS[timeFrame];
-        // const processedData = filterAndFormatAllData(rawData, intervalMins);
-
         // **Cache and return processed data:**
         setChartDataCache((prevCache) => ({
           ...prevCache,
           [cacheKey]: rawData, // Store the data directly from the backend
         })); // Update cache
+
         console.log(`WorkspaceChartData - CACHE UPDATE for ${cacheKey}`);
         return rawData; // Return processed data for direct use
       } catch (error: any) {
@@ -160,17 +158,6 @@ const Device = () => {
         return null; // Return null in case of error
       } finally {
         setIsLoading(false);
-        setIsChartDataLoaded(true);
-        console.log(
-          "fetchChartData FINALLY - timeFrame:",
-          timeFrame,
-          " || dataType:",
-          dataType,
-          " || parameter:",
-          parameter,
-          " || isLoading:",
-          isLoading
-        );
       }
     },
     [
@@ -178,7 +165,6 @@ const Device = () => {
       setIsLoading,
       setError,
       // filterAndFormatAllData, // Removed
-      setIsChartDataLoaded,
       chartDataCache,
       token,
       API_URL_BASE,
@@ -186,7 +172,6 @@ const Device = () => {
   );
 
   const fetchInitialData = useCallback(async () => {
-    console.log("fetchInitialData START - isLoading:", isLoading);
     setIsLoading(true);
     setError(null);
     try {
@@ -202,8 +187,6 @@ const Device = () => {
     } finally {
       setIsLoading(false);
       setIsInitialDataLoaded(true);
-      setIsChartDataLoaded(true);
-      console.log("fetchInitialData FINALLY - isLoading:", isLoading);
     }
   }, [
     fetchRealTimeData,
@@ -211,7 +194,6 @@ const Device = () => {
     setIsLoading,
     setError,
     setIsInitialDataLoaded,
-    setIsChartDataLoaded,
     deviceTime,
     deviceType,
     deviceParameter,
@@ -224,29 +206,21 @@ const Device = () => {
   // Debounced handlers (KEEP these and modify to use fetchChartData):
   const debouncedSetParameter = useRef(
     debounce(async (parameter: string) => {
-      // Make debounced functions async
-      console.log(
-        "debouncedSetParameter - START",
-        "parameter:",
-        parameter,
-        "isLoading:",
-        isLoading
-      );
       setIsLoading(true);
       setDeviceParameter(parameter);
 
-      if (deviceTime && (deviceType === "energy" || deviceType === "compost")) {
+      if (
+        deviceTime &&
+        (deviceType === "energy" ||
+          deviceType === "solar" ||
+          deviceType === "compost")
+      ) {
         const dataType = deviceType;
         await fetchChartData(deviceTime, dataType, parameter); // Await fetchChartData
       } else {
         setIsLoading(false);
-        console.log(
-          "debouncedSetParameter - setIsLoading(false) - no time or device - isLoading:",
-          isLoading
-        );
       }
       setIsLoading(false); // Ensure loading is set to false after fetch completes or fails
-      console.log("debouncedSetParameter - END");
     }, 200)
   ).current;
 
@@ -257,7 +231,9 @@ const Device = () => {
       setDeviceTime(time);
 
       if (
-        (deviceType === "energy" || deviceType === "compost") &&
+        (deviceType === "energy" ||
+          deviceType === "solar" ||
+          deviceType === "compost") &&
         deviceParameter
       ) {
         const dataType = deviceType;
@@ -288,6 +264,16 @@ const Device = () => {
     setIsLoading(false);
   };
 
+  const handleSolarEnergyClick = async () => {
+    setIsLoading(true);
+    setDeviceType("solar");
+    setDeviceParameter("voltage");
+
+    await fetchChartData(deviceTime, "solar", "voltage"); // Await fetchChartData
+
+    setIsLoading(false);
+  };
+
   const handleDeviceCompostClick = async () => {
     setIsLoading(true);
     setDeviceType("compost");
@@ -304,12 +290,15 @@ const Device = () => {
     const timeFrame = deviceTime;
     const cacheKey = `${timeFrame}-${dataType}-${parameter}`;
 
-    return chartDataCache[cacheKey] || {
-      solar: [],
-      teg: [],
-      compostContainerOne: [],
-      compostContainerTwo: [],
-    };
+    return (
+      chartDataCache[cacheKey] || {
+        solar: [],
+        tegOne: [],
+        tegTwo: [],
+        compostContainerOne: [],
+        compostContainerTwo: [],
+      }
+    );
   }, [deviceTime, deviceParameter, deviceType, chartDataCache]);
 
   const selectReading = (title: string) => {
@@ -317,6 +306,8 @@ const Device = () => {
   };
 
   const currentChartData = getChartDataForDisplay; // Use memoized chart data
+
+  console.log("currentChartData", currentChartData);
 
   return (
     <SafeAreaView className="flex-1">
@@ -350,10 +341,20 @@ const Device = () => {
               <View className="w-[72.5%] py-2 flex-row flex justify-between items-center mt-2 gap-2">
                 <CustomButton
                   onPress={handleDeviceEnergyClick}
-                  title="Energy Data"
+                  title="TEG"
                   textStyles="text-[8px] font-bold color-white"
-                  containerStyles={`w-[40%] p-2 align-center bg-gray-800 ${
+                  containerStyles={`flex-1 p-2 align-center bg-gray-800 ${
                     deviceType === "energy"
+                      ? "border-[#10B04B] border-2"
+                      : "border-gray-100 border-[0.5px]"
+                  }`}
+                />
+                <CustomButton
+                  onPress={handleSolarEnergyClick}
+                  title="Solar"
+                  textStyles="text-[8px] font-bold color-white"
+                  containerStyles={`flex-1 p-2 align-center bg-gray-800 ${
+                    deviceType === "solar"
                       ? "border-[#10B04B] border-2"
                       : "border-gray-100 border-[0.5px]"
                   }`}
@@ -363,7 +364,7 @@ const Device = () => {
                   onPress={handleDeviceCompostClick}
                   title="Compost Data"
                   textStyles="text-[8px] font-bold color-white"
-                  containerStyles={`w-[40%] p-2 align-center bg-gray-800 ${
+                  containerStyles={`flex-1 p-2 align-center bg-gray-800 ${
                     deviceType === "compost"
                       ? "border-[#10B04B] border-2"
                       : "border-gray-100 border-[0.5px]"
@@ -372,23 +373,30 @@ const Device = () => {
               </View>
 
               {/* Time Period Buttons */}
-              <View className="w-[72.5%] pb-3 flex-row flex justify-between items-center">
+              <View className="w-[72.5%] pb-3 gap-2 flex-row flex justify-between items-center">
                 {["day", "week", "month"].map((time) => (
                   <CustomButton
                     key={time}
                     onPress={() => handleTimeClick(time)}
                     title={time.charAt(0).toUpperCase() + time.slice(1)} // Capitalize first letter
                     textStyles="text-[8px] font-bold color-white"
-                    containerStyles={`w-1/4 align-center p-2 bg-gray-800 ${
+                    containerStyles={`flex-1 align-center p-2 bg-gray-800 ${
                       deviceTime === time
                         ? "border-[#10B04B] border-2"
                         : "border-gray-100 border-[0.5px]"
                     } ${
-                      !(deviceType === "energy" || deviceType === "compost") &&
-                      "opacity-50 border-green-4 bg-transparent"
+                      !(
+                        deviceType === "energy" ||
+                        deviceType === "solar" ||
+                        deviceType === "compost"
+                      ) && "opacity-50 border-green-4 bg-transparent"
                     }`}
                     disabled={
-                      !(deviceType === "energy" || deviceType === "compost")
+                      !(
+                        deviceType === "energy" ||
+                        deviceType === "solar" ||
+                        deviceType === "compost"
+                      )
                     }
                   />
                 ))}
@@ -397,7 +405,7 @@ const Device = () => {
 
             {/* Line Chart with Parameter Selection for Energy and Compost*/}
             <View className="w-full flex-col">
-              {!(deviceType === "energy") && !(deviceType === "compost") && (
+              {!(deviceType === "energy") && !(deviceType === "compost") && !(deviceType === "solar") && (
                 <View className="w-full h-[350px] justify-center items-center">
                   <Text className="font-semibold">Select A Parameter</Text>
                 </View>
@@ -413,7 +421,7 @@ const Device = () => {
               )}
 
               {/* For The LineGraph */}
-              {(deviceType === "energy" || deviceType === "compost") &&
+              {(deviceType === "energy" || deviceType === "solar" || deviceType === "compost") &&
                 isInitialDataLoaded && (
                   <>
                     {isLoading ? (
@@ -428,6 +436,7 @@ const Device = () => {
                           isLoading={isLoading}
                           isDeviceCompostSelected={deviceType === "compost"}
                           isDeviceEnergySelected={deviceType === "energy"}
+                          isSolarSelected={deviceType === "solar"}
                           deviceParameter={deviceParameter}
                           getMaxValue={getMaxValue}
                           getYAxisLabelSuffix={getYAxisLabelSuffix}
@@ -443,25 +452,21 @@ const Device = () => {
             <View className="w-full justify-center items-center p-5 border-gray-100 border-t-[0.5px]">
               <View className="w-full flex-row justify-center items-center pt-2 bg-[#2F2C2C]">
                 <View className="w-full flex-row justify-between items-center  gap-[1px] bg-[#2F2C2C]">
-                  {[
-                    "SOLAR",
-                    "TEG",
-                    "BATTERY",
-                    "COMPOST1",
-                    "COMPOST2",
-                  ].map((itemTitle) => (
-                    <CustomButton
-                      key={itemTitle}
-                      onPress={() => selectReading(itemTitle)}
-                      title={itemTitle}
-                      textStyles="text-[7px] font-bold color-white"
-                      containerStyles={`flex-1 py-5 align-center bg-gray-800 ${
-                        selectedReading === itemTitle
-                          ? "border-[#10B04B] border-2"
-                          : ""
-                      }`}
-                    />
-                  ))}
+                  {["SOLAR", "BATTERY", "COMPOST #1", "COMPOST #2"].map(
+                    (itemTitle) => (
+                      <CustomButton
+                        key={itemTitle}
+                        onPress={() => selectReading(itemTitle)}
+                        title={itemTitle}
+                        textStyles="text-[7px] font-bold color-white"
+                        containerStyles={`flex-1 py-5 align-center bg-gray-800 ${
+                          selectedReading === itemTitle
+                            ? "border-[#10B04B] border-2"
+                            : ""
+                        }`}
+                      />
+                    )
+                  )}
                 </View>
               </View>
               <RealTimeReading

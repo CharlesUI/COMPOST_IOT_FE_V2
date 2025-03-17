@@ -11,22 +11,27 @@ export interface RTC {
     current: number;
     wattage: number;
   };
-  teg: {
-    voltage: number;
-    current: number;
-    wattage: number;
-  };
   compostContainerOne: {
     methane: number;
     temperatureIn: number;
     temperatureOut: number;
     moisture: number;
+    tegOne: {
+      voltage: number;
+      current: number;
+      wattage: number;
+    };
   };
   compostContainerTwo: {
     methane: number;
     temperatureIn: number;
     temperatureOut: number;
     moisture: number;
+    tegTwo: {
+      voltage: number;
+      current: number;
+      wattage: number;
+    };
   };
   timestamp: Date;
 }
@@ -272,10 +277,8 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
 
         <View className="bg-gray-800 rounded-lg p-4">
           <View className="flex-row flex-wrap justify-around">
-            
             {/* Changed to flex-wrap */}
             <View className="items-center w-1/2 mb-4">
-              
               {/* Added width and margin */}
               <CircleProgress
                 percentage={tempInPercentage}
@@ -288,7 +291,6 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
               />
             </View>
             <View className="items-center w-1/2 mb-4">
-              
               {/* Added width and margin */}
               <CircleProgress
                 percentage={tempOutPercentage}
@@ -301,7 +303,6 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
               />
             </View>
             <View className="items-center w-1/2 mb-4">
-              
               {/* Added width and margin */}
               <CircleProgress
                 percentage={moisturePercentage}
@@ -314,7 +315,6 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
               />
             </View>
             <View className="items-center w-1/2 mb-4">
-              
               {/* Added width and margin */}
               <CircleProgress
                 percentage={methanePercentage}
@@ -442,134 +442,166 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
         </View>
       )}
 
-      {selectedReading === "TEG" && (
-        <View className="flex-1 p-4">
-          <Text className="color-white mb-4 font-bold text-center text-xl">
-            TEG Power
-          </Text>
-          <PowerMonitor
-            voltage={realTimeData?.teg.voltage || 0}
-            current={realTimeData?.teg.current || 0}
-            wattage={realTimeData?.teg.wattage || 0}
-            type="TEG"
-          />
-          <View className="bg-gray-800 rounded-lg p-4 mt-4">
-            <Text className="color-white font-medium mb-2">
-              TEG Performance
+      {selectedReading === "COMPOST #1" && (
+        <>
+          <View className="flex-1 p-4">
+            <Text className="color-white mb-4 font-bold text-center text-xl">
+              Compost Storage 1
             </Text>
-            <Text className="color-white">
-              {realTimeData?.teg.wattage || 0 > 5
-                ? "High TEG energy production"
-                : realTimeData?.teg.wattage || 0 > 2
-                ? "Moderate TEG energy production"
-                : "Low TEG energy production"}
-            </Text>
+            <CompostMonitor
+              temperatureIn={
+                realTimeData?.compostContainerOne.temperatureIn || 0
+              }
+              temperatureOut={
+                realTimeData?.compostContainerOne.temperatureOut || 0
+              }
+              moisture={realTimeData?.compostContainerOne.moisture || 0}
+              methane={realTimeData?.compostContainerOne.methane || 0}
+              id="1"
+            />
+            <View className="bg-gray-800 rounded-lg p-4 mt-4">
+              <Text className="color-white font-medium mb-2">
+                Status Summary
+              </Text>
+              <Text className="color-white mb-1">
+                Internal Temp:
+                {realTimeData?.compostContainerOne.temperatureIn || 0 < 40
+                  ? "Too cold"
+                  : realTimeData?.compostContainerOne.temperatureIn || 0 > 65
+                  ? "Too hot"
+                  : "Optimal"}
+              </Text>
+              <Text className="color-white mb-1">
+                External Temp:
+                {realTimeData?.compostContainerOne.temperatureOut || 0 < 40
+                  ? "Too cold"
+                  : realTimeData?.compostContainerOne.temperatureOut || 0 > 65
+                  ? "Too hot"
+                  : "Optimal"}
+              </Text>
+              <Text className="color-white mb-1">
+                Moisture:
+                {realTimeData?.compostContainerOne.moisture || 0 < 40
+                  ? "Too dry"
+                  : realTimeData?.compostContainerOne.moisture || 0 > 60
+                  ? "Too wet"
+                  : "Optimal"}
+              </Text>
+              <Text className="color-white">
+                Methane:
+                {realTimeData?.compostContainerOne.methane || 0 > 300
+                  ? "High (action required)"
+                  : realTimeData?.compostContainerOne.methane || 0 > 100
+                  ? "Moderate"
+                  : "Low (good)"}
+              </Text>
+            </View>
           </View>
-        </View>
+          <View className="flex-1 p-4">
+            <Text className="color-white mb-4 font-bold text-center text-xl">
+              TEG One Power
+            </Text>
+            <PowerMonitor
+              voltage={realTimeData?.compostContainerOne.tegOne.voltage || 0}
+              current={realTimeData?.compostContainerOne.tegOne.current || 0}
+              wattage={realTimeData?.compostContainerOne.tegOne.wattage || 0}
+              type="TEG"
+            />
+            <View className="bg-gray-800 rounded-lg p-4 mt-4">
+              <Text className="color-white font-medium mb-2">
+                TEG Performance
+              </Text>
+              <Text className="color-white">
+                {realTimeData?.compostContainerOne.tegOne.wattage || 0 > 5
+                  ? "High TEG energy production"
+                  : realTimeData?.compostContainerOne.tegOne.wattage || 0 > 2
+                  ? "Moderate TEG energy production"
+                  : "Low TEG energy production"}
+              </Text>
+            </View>
+          </View>
+        </>
       )}
 
-      {selectedReading === "COMPOST1" && (
-        <View className="flex-1 p-4">
-          <Text className="color-white mb-4 font-bold text-center text-xl">
-            Compost Storage 1
-          </Text>
-          <CompostMonitor
-            temperatureIn={realTimeData?.compostContainerOne.temperatureIn || 0}
-            temperatureOut={
-              realTimeData?.compostContainerOne.temperatureOut || 0
-            }
-            moisture={realTimeData?.compostContainerOne.moisture || 0}
-            methane={realTimeData?.compostContainerOne.methane || 0}
-            id="1"
-          />
-          <View className="bg-gray-800 rounded-lg p-4 mt-4">
-            <Text className="color-white font-medium mb-2">Status Summary</Text>
-            <Text className="color-white mb-1">
-              Internal Temp:
-              {realTimeData?.compostContainerOne.temperatureIn || 0 < 40
-                ? "Too cold"
-                : realTimeData?.compostContainerOne.temperatureIn || 0 > 65
-                ? "Too hot"
-                : "Optimal"}
+      {selectedReading === "COMPOST #2" && (
+        <>
+          <View className="flex-1 p-4">
+            <Text className="color-white mb-4 font-bold text-center text-xl">
+              Compost Storage 2
             </Text>
-            <Text className="color-white mb-1">
-              External Temp:
-              {realTimeData?.compostContainerOne.temperatureOut || 0 < 40
-                ? "Too cold"
-                : realTimeData?.compostContainerOne.temperatureOut || 0 > 65
-                ? "Too hot"
-                : "Optimal"}
-            </Text>
-            <Text className="color-white mb-1">
-              Moisture:
-              {realTimeData?.compostContainerOne.moisture || 0 < 40
-                ? "Too dry"
-                : realTimeData?.compostContainerOne.moisture || 0 > 60
-                ? "Too wet"
-                : "Optimal"}
-            </Text>
-            <Text className="color-white">
-              Methane:
-              {realTimeData?.compostContainerOne.methane || 0 > 300
-                ? "High (action required)"
-                : realTimeData?.compostContainerOne.methane || 0 > 100
-                ? "Moderate"
-                : "Low (good)"}
-            </Text>
+            <CompostMonitor
+              temperatureIn={
+                realTimeData?.compostContainerTwo.temperatureIn || 0
+              }
+              temperatureOut={
+                realTimeData?.compostContainerTwo.temperatureOut || 0
+              }
+              moisture={realTimeData?.compostContainerTwo.moisture || 0}
+              methane={realTimeData?.compostContainerTwo.methane || 0}
+              id="2"
+            />
+            <View className="bg-gray-800 rounded-lg p-4 mt-4">
+              <Text className="color-white font-medium mb-2">
+                Status Summary
+              </Text>
+              <Text className="color-white mb-1">
+                Internal Temp:
+                {realTimeData?.compostContainerTwo.temperatureIn || 0 < 40
+                  ? "Too cold"
+                  : realTimeData?.compostContainerTwo.temperatureIn || 0 > 65
+                  ? "Too hot"
+                  : "Optimal"}
+              </Text>
+              <Text className="color-white mb-1">
+                External Temp:
+                {realTimeData?.compostContainerTwo.temperatureOut || 0 < 40
+                  ? "Too cold"
+                  : realTimeData?.compostContainerTwo.temperatureOut || 0 > 65
+                  ? "Too hot"
+                  : "Optimal"}
+              </Text>
+              <Text className="color-white mb-1">
+                Moisture:
+                {realTimeData?.compostContainerTwo.moisture || 0 < 40
+                  ? "Too dry"
+                  : realTimeData?.compostContainerTwo.moisture || 0 > 60
+                  ? "Too wet"
+                  : "Optimal"}
+              </Text>
+              <Text className="color-white">
+                Methane:
+                {realTimeData?.compostContainerTwo.methane || 0 > 300
+                  ? "High (action required)"
+                  : realTimeData?.compostContainerTwo.methane || 0 > 100
+                  ? "Moderate"
+                  : "Low (good)"}
+              </Text>
+            </View>
           </View>
-        </View>
-      )}
-
-      {selectedReading === "COMPOST2" && (
-        <View className="flex-1 p-4">
-          <Text className="color-white mb-4 font-bold text-center text-xl">
-            Compost Storage 2
-          </Text>
-          <CompostMonitor
-            temperatureIn={realTimeData?.compostContainerTwo.temperatureIn || 0}
-            temperatureOut={
-              realTimeData?.compostContainerTwo.temperatureOut || 0
-            }
-            moisture={realTimeData?.compostContainerTwo.moisture || 0}
-            methane={realTimeData?.compostContainerTwo.methane || 0}
-            id="2"
-          />
-          <View className="bg-gray-800 rounded-lg p-4 mt-4">
-            <Text className="color-white font-medium mb-2">Status Summary</Text>
-            <Text className="color-white mb-1">
-              Internal Temp:
-              {realTimeData?.compostContainerTwo.temperatureIn || 0 < 40
-                ? "Too cold"
-                : realTimeData?.compostContainerTwo.temperatureIn || 0 > 65
-                ? "Too hot"
-                : "Optimal"}
+          <View className="flex-1 p-4">
+            <Text className="color-white mb-4 font-bold text-center text-xl">
+              TEG Two Power
             </Text>
-            <Text className="color-white mb-1">
-              External Temp:
-              {realTimeData?.compostContainerTwo.temperatureOut || 0 < 40
-                ? "Too cold"
-                : realTimeData?.compostContainerTwo.temperatureOut || 0 > 65
-                ? "Too hot"
-                : "Optimal"}
-            </Text>
-            <Text className="color-white mb-1">
-              Moisture:
-              {realTimeData?.compostContainerTwo.moisture || 0 < 40
-                ? "Too dry"
-                : realTimeData?.compostContainerTwo.moisture || 0 > 60
-                ? "Too wet"
-                : "Optimal"}
-            </Text>
-            <Text className="color-white">
-              Methane:
-              {realTimeData?.compostContainerTwo.methane || 0 > 300
-                ? "High (action required)"
-                : realTimeData?.compostContainerTwo.methane || 0 > 100
-                ? "Moderate"
-                : "Low (good)"}
-            </Text>
+            <PowerMonitor
+              voltage={realTimeData?.compostContainerTwo.tegTwo.voltage || 0}
+              current={realTimeData?.compostContainerTwo.tegTwo.current || 0}
+              wattage={realTimeData?.compostContainerTwo.tegTwo.wattage || 0}
+              type="TEG"
+            />
+            <View className="bg-gray-800 rounded-lg p-4 mt-4">
+              <Text className="color-white font-medium mb-2">
+                TEG Performance
+              </Text>
+              <Text className="color-white">
+                {realTimeData?.compostContainerTwo.tegTwo.wattage || 0 > 5
+                  ? "High TEG energy production"
+                  : realTimeData?.compostContainerTwo.tegTwo.wattage || 0 > 2
+                  ? "Moderate TEG energy production"
+                  : "Low TEG energy production"}
+              </Text>
+            </View>
           </View>
-        </View>
+        </>
       )}
     </View>
   );

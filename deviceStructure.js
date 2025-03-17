@@ -9,22 +9,27 @@
 // 			current: number,
 // 			wattage: number,
 // 		},
-// 		teg: {
-// 			voltage: number,
-// 			current: number,
-// 			wattage: number,
-// 		},
 // 		compostContainerOne:{
 // 			methane: number,
 // 			temperatureIn: number,
 //          temperatureOut: number,
 // 			moisture: number,
+//          tegOne: {
+// 			    voltage: number,
+// 			    current: number,
+// 			    wattage: number,
+// 		   },
 // 		},
 // 		compostContainerTwo:{
 // 			methane: number,
 // 			temperatureIn: number,
 //          temperatureOut: number,
 // 			moisture: number,
+//          tegTwo: {
+// 			    voltage: number,
+// 			    current: number,
+// 			    wattage: number,
+// 		    },
 // 		},
 // 		timestamp: Date
 // 	},
@@ -35,22 +40,27 @@
 // 			current: number,
 // 			wattage: number,
 // 		},
-// 		teg: {
-// 			voltage: number,
-// 			current: number,
-// 			wattage: number,
-// 		},
 // 		compostContainerOne:{
 // 			methane: number,
 // 			temperatureIn: number,
 //          temperatureOut: number,
 // 			moisture: number,
+//          tegOne: {
+// 			    voltage: number,
+// 			    current: number,
+// 			    wattage: number,
+// 		   },
 // 		},
 // 		compostContainerTwo:{
 // 			methane: number,
 // 			temperatureIn: number,
 //          temperatureOut: number,
 // 			moisture: number,
+//          tegTwo: {
+// 			    voltage: number,
+// 			    current: number,
+// 			    wattage: number,
+// 		   },
 // 		},
 // 		timestamp: Date
 // 	}]

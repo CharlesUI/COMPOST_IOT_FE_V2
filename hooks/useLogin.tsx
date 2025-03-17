@@ -11,6 +11,8 @@ const useLogin = () => {
     setLoading(true);
     setError(null);
 
+    console.log("Login attempt with:", email, password);
+
     try {
       const response = await fetch(`${API_URL_BASE}/user/login`, {
         method: "POST",
