@@ -1,10 +1,11 @@
+// frontend/screens/AdminNotifications.js
 import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
   Pressable,
-  Animated,
   FlatList,
+  Animated,
   PanResponder,
   Image,
   StyleSheet,
@@ -14,13 +15,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import Feather from "@expo/vector-icons/Feather";
 import { router } from "expo-router";
-import { useUser } from "@/context/UserContext";
 import { API_URL_BASE } from "@/constants/API_URL";
-import useNotifications from "@/hooks/useNotifications";
 import { AntDesign } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useToast } from "react-native-toast-notifications";
 import { BlurView } from "expo-blur";
 
 // Define the TypeScript interface for the Notification object
@@ -37,89 +35,59 @@ interface NotificationItemType {
   updatedAt?: string;
 }
 
-const Notification = () => {
-  const { user, updateUser } = useUser();
-  const [allNotifications, setAllNotifications] = useState<NotificationItemType[]>([]);
-  const [previousNotificationIds, setPreviousNotificationIds] = useState<string[]>([]);
+const AdminNotifications = () => {
+  const [allDeviceNotifications, setAllDeviceNotifications] = useState<
+    NotificationItemType[]
+  >([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const {
-    fetchDeviceNotifications,
-    fetchUserNotifications,
-    deviceNotifications,
-    userNotifications,
-    loadingDevice,
-    loadingUser,
-    errorDevice,
-    errorUser,
-    deleteNotification,
-  } = useNotifications();
-
-  const toast = useToast();
-
   useEffect(() => {
-    if (user?.devices) {
-      updateUser({ ...user, selectedDevice: user.devices[0] });
-    }
-    loadNotifications();
-  }, [user?.selectedDevice, user?._id]);
+    fetchAllDeviceNotifications();
+  }, []);
 
-  const loadNotifications = () => {
-    if (user?.selectedDevice) {
-      fetchDeviceNotifications(user?.selectedDevice);
-      fetchUserNotifications(user?._id);
-    } else if (user?._id) {
-      fetchUserNotifications(user?._id);
+  const fetchAllDeviceNotifications = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`${API_URL_BASE}/admin/notifications/all`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setAllDeviceNotifications(data.notifications);
+    } catch (e: any) {
+      setError(e.message || "Failed to fetch device notifications.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadNotifications();
+    await fetchAllDeviceNotifications();
     setRefreshing(false);
   };
 
-  useEffect(() => {
-    // Combine device and user notifications and sort by timestamp
-    const combined = [...(deviceNotifications || []), ...(userNotifications || [])];
-    combined.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-    setAllNotifications(combined);
-
-    // Update previous notification IDs for toast logic
-    setPreviousNotificationIds(combined.map(n => n._id));
-  }, [deviceNotifications, userNotifications]);
-
-  useEffect(() => {
-    // Show toast notifications for new notifications
-    if (allNotifications && previousNotificationIds) {
-      const newNotifications = allNotifications.filter(notif => !previousNotificationIds.includes(notif._id));
-
-      newNotifications.forEach((notif) => {
-        let type = "default";
-        if (notif.level === "good") {
-          type = "success";
-        } else if (notif.level === "warning") {
-          type = "warning";
-        } else if (notif.level === "danger") {
-          type = "danger";
-        } else if (notif.level === "info") {
-          type = "info";
-        }
-        
-        const message = notif.message.includes(": ") ? notif.message.split(": ")[1] : notif.message;
-        
-        toast.show(message, {
-          type: type,
-          placement: "bottom",
-          duration: 3000,
-          animationType: "slide-in",
-        });
-      });
-    }
-  }, [allNotifications, previousNotificationIds, toast]);
-
   const handleRemoveNotification = async (id: string) => {
-    await deleteNotification(id);
+    try {
+      const response = await fetch(
+        `${API_URL_BASE}/admin/notifications/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
+      if (response.ok) {
+        setAllDeviceNotifications((prevNotifications) =>
+          prevNotifications.filter((notification) => notification._id !== id)
+        );
+      } else {
+        console.error("Failed to delete notification");
+      }
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+    }
   };
 
   const getTimeAgo = (timestamp: string) => {
@@ -131,7 +99,7 @@ const Notification = () => {
     const diffInDays = Math.floor(diffInHours / 24);
 
     if (diffInMinutes < 1) {
-      return 'Just now';
+      return "Just now";
     } else if (diffInMinutes < 60) {
       return `${diffInMinutes}m ago`;
     } else if (diffInHours < 24) {
@@ -153,7 +121,7 @@ const Notification = () => {
     const translateX = useRef(new Animated.Value(0)).current;
     const scale = useRef(new Animated.Value(1)).current;
     const opacity = useRef(new Animated.Value(1)).current;
-    
+
     const panResponder = useRef(
       PanResponder.create({
         onMoveShouldSetPanResponder: (_, gestureState) => {
@@ -175,7 +143,7 @@ const Notification = () => {
             toValue: 1,
             useNativeDriver: true,
           }).start();
-          
+
           if (gestureState.dx < -100) {
             Animated.parallel([
               Animated.timing(translateX, {
@@ -187,7 +155,7 @@ const Notification = () => {
                 toValue: 0,
                 duration: 300,
                 useNativeDriver: true,
-              })
+              }),
             ]).start(() => onRemove(item._id));
           } else {
             Animated.spring(translateX, {
@@ -212,18 +180,18 @@ const Notification = () => {
     let iconComponent;
     let gradientColors: readonly [string, string];
     let iconBgColor;
-    
+
     switch (item.level) {
       case "good":
         iconComponent = (
           <MaterialCommunityIcons name="hand-okay" size={20} color="#FFFFFF" />
         );
-        gradientColors = ["#0A3622", "#0A3622CC"] as const
+        gradientColors = ["#0A3622", "#0A3622CC"] as const;
         iconBgColor = "#10B04B";
         break;
       case "warning":
         iconComponent = <AntDesign name="warning" size={20} color="#FFFFFF" />;
-        gradientColors = ["#47340A", "#47340ACC"]; 
+        gradientColors = ["#47340A", "#47340ACC"];
         iconBgColor = "#FFB020";
         break;
       case "danger":
@@ -245,17 +213,16 @@ const Notification = () => {
 
     const deviceName = item.deviceId || "System";
     const timeAgo = getTimeAgo(item.timestamp);
-    const message = item.level === "info" ? item.message : 
-      item.message.includes(": ") ? item.message.split(": ")[1] : item.message;
+    const message = item.message ? String(item.message) : "";
 
     return (
       <Animated.View
         style={[
           styles.notificationContainer,
-          { 
+          {
             transform: [{ translateX }, { scale }],
-            opacity 
-          }
+            opacity,
+          },
         ]}
         {...panResponder.panHandlers}
       >
@@ -266,10 +233,12 @@ const Notification = () => {
           style={styles.notificationGradient}
         >
           <View style={styles.notificationContent}>
-            <View style={[styles.iconContainer, { backgroundColor: iconBgColor }]}>
+            <View
+              style={[styles.iconContainer, { backgroundColor: iconBgColor }]}
+            >
               {iconComponent}
             </View>
-            
+
             <View style={styles.textContainer}>
               <View style={styles.headerContainer}>
                 <Text style={styles.deviceName}>{deviceName}</Text>
@@ -279,7 +248,7 @@ const Notification = () => {
             </View>
           </View>
         </LinearGradient>
-        
+
         <View style={styles.swipeHint}>
           <Text style={styles.swipeText}>Swipe left to dismiss</Text>
         </View>
@@ -291,27 +260,23 @@ const Notification = () => {
     <NotificationItem item={item} onRemove={handleRemoveNotification} />
   );
 
-  const loadingAll = loadingDevice || loadingUser;
-  const errorAll = errorDevice || errorUser;
-
   const ListEmptyComponent = () => (
     <View style={styles.emptyContainer}>
-      {/* <Image 
-        source={require('@/assets/images/empty-notifications.png')} 
-        style={styles.emptyImage}
-      /> */}
-      <Text style={styles.emptyTitle}>No notifications yet</Text>
+      <Text style={styles.emptyTitle}>No device notifications yet</Text>
       <Text style={styles.emptySubtitle}>
-        When you receive notifications, they'll appear here.
+        When devices send notifications, they'll appear here.
       </Text>
     </View>
   );
 
   const ListHeaderComponent = () => (
     <View style={styles.headerContainer}>
-      <Text style={styles.headerTitle}>Recent</Text>
-      {allNotifications.length > 0 && (
-        <Pressable style={styles.clearAllButton} onPress={() => console.log("Clear all")}>
+      <Text style={styles.headerTitle}>Recent Device Notifications</Text>
+      {allDeviceNotifications.length > 0 && (
+        <Pressable
+          style={styles.clearAllButton}
+          onPress={() => console.log("Clear all")}
+        >
           <Text style={styles.clearAllText}>Clear all</Text>
         </Pressable>
       )}
@@ -321,34 +286,37 @@ const Notification = () => {
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <LinearGradient
-        colors={['#2F2C2C', '#242121']}
-        style={styles.header}
-      >
+      <LinearGradient colors={["#2F2C2C", "#242121"]} style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <Feather name="arrow-left" size={24} color="white" />
         </Pressable>
-        <Text style={styles.headerText}>Notifications</Text>
-        <Pressable style={styles.settingsButton}>
-          <Feather name="settings" size={22} color="white" />
-        </Pressable>
+        <Text style={styles.headerText}>Device Notifications</Text>
+        <View style={{ width: 24 }} />
       </LinearGradient>
 
       {/* Notification List */}
-      {loadingAll && allNotifications.length === 0 ? (
+      {loading && allDeviceNotifications.length === 0 ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#10B04B" />
           <Text style={styles.loadingText}>Loading notifications...</Text>
         </View>
+      ) : error ? (
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>
+            Error loading notifications: {error}
+          </Text>
+        </View>
       ) : (
         <FlatList
-          data={allNotifications}
+          data={allDeviceNotifications}
           renderItem={renderItem}
           keyExtractor={(item) => item._id}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={ListEmptyComponent}
-          ListHeaderComponent={allNotifications.length > 0 ? ListHeaderComponent : null}
+          ListHeaderComponent={
+            allDeviceNotifications.length > 0 ? ListHeaderComponent : null
+          }
           refreshing={refreshing}
           onRefresh={onRefresh}
         />
@@ -360,51 +328,48 @@ const Notification = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#242121',
+    backgroundColor: "#242121",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: '#3A3A3A',
+    borderBottomColor: "#3A3A3A",
   },
   headerText: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: 'white',
+    fontWeight: "bold",
+    color: "white",
   },
   backButton: {
-    padding: 8,
-  },
-  settingsButton: {
     padding: 8,
   },
   listContent: {
     paddingTop: 16,
     paddingBottom: 120,
-    minHeight: '100%',
+    minHeight: "100%",
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: '#AAAAAA',
+    color: "#AAAAAA",
   },
   notificationContainer: {
     marginBottom: 12,
     marginHorizontal: 16,
     borderRadius: 16,
-    overflow: 'hidden',
+    overflow: "hidden",
     elevation: 5,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -413,18 +378,18 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   notificationContent: {
-    flexDirection: 'row',
+    flexDirection: "row",
     padding: 16,
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
   },
   iconContainer: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
@@ -434,65 +399,59 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 6,
+    marginLeft: 16,
   },
   deviceName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: 'white',
+    fontWeight: "600",
+    color: "white",
   },
   timeAgo: {
     fontSize: 12,
-    color: '#BBBBBB',
+    color: "#BBBBBB",
   },
   message: {
     fontSize: 14,
-    color: '#DDDDDD',
+    color: "#DDDDDD",
     lineHeight: 20,
   },
   swipeHint: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 6,
     right: 12,
   },
   swipeText: {
     fontSize: 10,
-    color: '#999999',
-    fontStyle: 'italic',
+    color: "#999999",
+    fontStyle: "italic",
   },
   emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingTop: 120,
     paddingHorizontal: 40,
   },
-  emptyImage: {
-    width: 150,
-    height: 150,
-    marginBottom: 24,
-    opacity: 0.8,
-  },
   emptyTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: 'white',
+    fontWeight: "bold",
+    color: "white",
     marginBottom: 8,
   },
   emptySubtitle: {
     fontSize: 14,
-    color: '#AAAAAA',
-    textAlign: 'center',
+    color: "#AAAAAA",
+    textAlign: "center",
     lineHeight: 20,
   },
   headerTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#CCCCCC',
+    fontWeight: "600",
+    color: "#CCCCCC",
     marginBottom: 12,
-    marginLeft: 16,
   },
   clearAllButton: {
     paddingVertical: 6,
@@ -500,9 +459,9 @@ const styles = StyleSheet.create({
   },
   clearAllText: {
     fontSize: 14,
-    color: '#10B04B',
-    fontWeight: '500',
+    color: "#10B04B",
+    fontWeight: "500",
   },
 });
 
-export default Notification;
+export default AdminNotifications;

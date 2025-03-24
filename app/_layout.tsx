@@ -28,6 +28,10 @@ const RootLayout = () => {
                 options={{ headerShown: false, presentation: "modal" }}
               />
               <Stack.Screen
+                name="(modal)/AdminNotifications"
+                options={{ headerShown: false, presentation: "modal" }}
+              />
+              <Stack.Screen
                 name="(modal)/Notification"
                 options={{ headerShown: false, presentation: "modal" }}
               />

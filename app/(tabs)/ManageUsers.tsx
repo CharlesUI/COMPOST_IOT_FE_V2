@@ -8,12 +8,15 @@ import {
   Modal,
   TextInput,
   Alert,
+  ActivityIndicator,
+  StatusBar
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import HeaderSection from "@/components/HeaderSection";
 import { useAdmin } from "@/context/AdminContext";
 import { router } from "expo-router";
 import { API_URL_BASE } from "@/constants/API_URL";
-import { useToast } from "react-native-toast-notifications"; // For displaying notifications
+import { useToast } from "react-native-toast-notifications";
 import { User } from "@/context/UserContext";
 
 const ManageUsers = () => {
@@ -28,9 +31,8 @@ const ManageUsers = () => {
   const [editedEmail, setEditedEmail] = useState<string | undefined>("");
   const [notificationMessage, setNotificationMessage] = useState<string | undefined>("");
   const toast = useToast();
-  // const [notificationMessage, setNotificationMessage] = useState("");
-  // Optional: State to manage notification level
-  const [selectedNotificationLevel, setSelectedNotificationLevel] = useState("info");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredUsers, setFilteredUsers] = useState<User[] | null>([]);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -46,6 +48,7 @@ const ManageUsers = () => {
         const data = await response.json();
         if (data.success) {
           setUsers(data.users);
+          setFilteredUsers(data.users);
         } else {
           setError(data.message || "Failed to fetch users");
         }
@@ -63,6 +66,17 @@ const ManageUsers = () => {
     }
   }, [admin, router]);
 
+  useEffect(() => {
+    if (users) {
+      const filtered = users.filter(
+        user => 
+          user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredUsers(filtered);
+    }
+  }, [searchQuery, users]);
+
   const openUserDetails = (user: any) => {
     setSelectedUser(user);
     setIsModalVisible(true);
@@ -79,7 +93,6 @@ const ManageUsers = () => {
   const handleEditUser = () => {
     setEditMode(true);
     if(selectedUser) {
-
       setEditedUsername(selectedUser?.username);
       setEditedEmail(selectedUser?.email);
     }
@@ -140,8 +153,6 @@ const ManageUsers = () => {
           },
           body: JSON.stringify({
             message: notificationMessage,
-            // Optional: Include the level if you added the UI
-            // level: selectedNotificationLevel,
           }),
         }
       );
@@ -153,8 +164,6 @@ const ManageUsers = () => {
       if (data.success) {
         toast.show("Notification sent successfully", { type: "success" });
         setNotificationMessage("");
-        // Optional: Reset the level state
-        // setSelectedNotificationLevel("info");
       } else {
         toast.show(data.message || "Failed to send notification", { type: "danger" });
       }
@@ -215,43 +224,113 @@ const ManageUsers = () => {
   const renderItem = ({ item }: any) => (
     <TouchableOpacity
       onPress={() => openUserDetails(item)}
-      className="bg-[#434040] p-4 my-2 mx-4 rounded-md"
+      className="bg-[#3A3A3A] p-5 my-2 mx-4 rounded-xl shadow-md border border-[#4A4A4A]"
+      style={{ elevation: 3 }}
     >
-      <Text className="text-lg font-bold text-white">{item.username}</Text>
-      <Text className="text-gray-400">{item.email}</Text>
+      <View className="flex-row justify-between items-center">
+        <View>
+          <Text className="text-lg font-bold text-white">{item.username}</Text>
+          <Text className="text-gray-400">{item.email}</Text>
+          {item.devices && item.devices.length > 0 && (
+            <View className="flex-row items-center mt-1">
+              <Ionicons name="phone-portrait-outline" size={14} color="#9CA3AF" />
+              <Text className="text-gray-400 ml-1 text-xs">{item.devices.length} device{item.devices.length !== 1 ? 's' : ''}</Text>
+            </View>
+          )}
+        </View>
+        <Ionicons name="chevron-forward" size={24} color="#9CA3AF" />
+      </View>
     </TouchableOpacity>
   );
 
-  if (loading) {
+  if (loading && !users?.length) {
     return (
-      <SafeAreaView className="flex-1 bg-[#2F2C2C] items-center justify-center">
+      <SafeAreaView className="flex-1 bg-[#242424] items-center justify-center">
+        <StatusBar barStyle="light-content" />
         <HeaderSection headerText="Manage Users" title="Admin" />
-        <Text className="text-white">Loading users...</Text>
+        <ActivityIndicator size="large" color="#6366F1" />
+        <Text className="text-white mt-4">Loading users...</Text>
       </SafeAreaView>
     );
   }
 
   if (error) {
     return (
-      <SafeAreaView className="flex-1 bg-[#2F2C2C] items-center justify-center">
+      <SafeAreaView className="flex-1 bg-[#242424] items-center justify-center">
+        <StatusBar barStyle="light-content" />
         <HeaderSection headerText="Manage Users" title="Admin" />
-        <Text className="text-red-500">Error loading users: {error}</Text>
+        <Ionicons name="alert-circle" size={48} color="#EF4444" />
+        <Text className="text-red-500 mt-2">Error loading users</Text>
+        <Text className="text-gray-400 text-center mx-6 mt-2">{error}</Text>
+        <TouchableOpacity 
+          className="bg-[#3A3A3A] px-6 py-3 rounded-lg mt-6"
+          onPress={() => router.replace("/AdminDashboard")}
+        >
+          <Text className="text-white font-semibold">Back to Dashboard</Text>
+        </TouchableOpacity>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#2F2C2C]">
+    <SafeAreaView className="flex-1 bg-[#242424]">
+      <StatusBar barStyle="light-content" />
       <HeaderSection headerText="Manage Users" title="Admin" />
+
+      {/* Search Bar */}
+      <View className="px-4 my-3">
+        <View className="bg-[#3A3A3A] rounded-lg px-3 py-2 flex-row items-center border border-[#4A4A4A]">
+          <Ionicons name="search" size={20} color="#9CA3AF" />
+          <TextInput
+            className="flex-1 text-white ml-2 h-10"
+            placeholder="Search users..."
+            placeholderTextColor="#9CA3AF"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery !== "" && (
+            <TouchableOpacity onPress={() => setSearchQuery("")}>
+              <Ionicons name="close-circle" size={20} color="#9CA3AF" />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+
+      {/* User Count */}
+      <View className="px-4 mb-2">
+        <Text className="text-gray-400">
+          {filteredUsers?.length || 0} user{filteredUsers?.length !== 1 ? 's' : ''} found
+        </Text>
+      </View>
+
       <FlatList
-        data={users}
+        data={filteredUsers}
         renderItem={renderItem}
         keyExtractor={(item) => item._id!}
+        contentContainerStyle={{ paddingBottom: 20 }}
         ListEmptyComponent={() => (
-          <View className="flex-1 justify-center items-center p-6">
-            <Text className="text-gray-600">No users found.</Text>
+          <View className="flex-1 justify-center items-center p-12">
+            <Ionicons name="people-outline" size={64} color="#6B7280" />
+            <Text className="text-gray-400 text-center mt-4 text-lg">
+              {searchQuery ? "No users match your search." : "No users found."}
+            </Text>
+            {searchQuery && (
+              <TouchableOpacity 
+                className="mt-4 bg-[#3A3A3A] px-6 py-2 rounded-lg"
+                onPress={() => setSearchQuery("")}
+              >
+                <Text className="text-white">Clear Search</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
+        refreshing={loading}
+        onRefresh={() => {
+          // Implement refresh logic here
+          setLoading(true);
+          // Fetch users again
+          // ...
+        }}
       />
 
       {/* User Details Modal */}
@@ -261,60 +340,128 @@ const ManageUsers = () => {
         visible={isModalVisible}
         onRequestClose={closeUserDetails}
       >
-        <View className="flex-1 justify-center items-center bg-[#00000080]">
-          <View className="bg-[#333333] rounded-md p-6 w-5/6">
-            <Text className="text-xl font-bold text-white mb-4">
-              {selectedUser?.username} Details
-            </Text>
-            <Text className="text-white mb-2">Email: {selectedUser?.email}</Text>
-            <Text className="text-white mb-2">
-              Devices: {selectedUser?.devices ? selectedUser.devices.join(", ") : "No devices"}
-            </Text>
+        <View className="flex-1 justify-end bg-[#00000099]">
+          <View className="bg-[#2A2A2A] rounded-t-3xl p-6">
+            <View className="items-center mb-4">
+              <View className="w-16 h-1 bg-gray-500 rounded-full mb-4" />
+              
+              <View className="w-16 h-16 bg-[#3A3A3A] rounded-full items-center justify-center mb-2">
+                <Text className="text-white text-3xl font-bold">
+                  {selectedUser?.username?.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+              
+              <Text className="text-xl font-bold text-white">
+                {!editMode ? selectedUser?.username : "Edit User"}
+              </Text>
+            </View>
 
-            {editMode ? (
-              <View>
-                <TextInput
-                  className="bg-[#444444] text-white p-2 rounded-md mb-2"
-                  placeholder="Username"
-                  placeholderTextColor="#777"
-                  value={editedUsername}
-                  onChangeText={setEditedUsername}
-                />
-                <TextInput
-                  className="bg-[#444444] text-white p-2 rounded-md mb-2"
-                  placeholder="Email"
-                  placeholderTextColor="#777"
-                  value={editedEmail}
-                  onChangeText={setEditedEmail}
-                />
-                <TouchableOpacity onPress={handleSaveUser} className="bg-green-500 p-3 rounded-md mt-2">
-                  <Text className="text-white font-bold text-center">Save</Text>
-                </TouchableOpacity>
+            {!editMode ? (
+              <View className="mb-6">
+                <View className="flex-row items-center mb-3">
+                  <Ionicons name="mail-outline" size={22} color="#9CA3AF" className="mr-3" />
+                  <Text className="text-white ml-2">{selectedUser?.email}</Text>
+                </View>
+                
+                <View className="flex-row items-center">
+                  <Ionicons name="phone-portrait-outline" size={22} color="#9CA3AF" className="mr-3" />
+                  <Text className="text-white ml-2">
+                    {selectedUser?.devices && selectedUser.devices.length > 0 
+                      ? `${selectedUser.devices.length} device${selectedUser.devices.length !== 1 ? 's' : ''} connected` 
+                      : "No devices"}
+                  </Text>
+                </View>
               </View>
             ) : (
-              <TouchableOpacity onPress={handleEditUser} className="bg-blue-500 p-3 rounded-md mt-2">
-                <Text className="text-white font-bold text-center">Edit</Text>
-              </TouchableOpacity>
+              <View className="mb-6">
+                <View className="mb-4">
+                  <Text className="text-gray-400 mb-1">Username</Text>
+                  <TextInput
+                    className="bg-[#3A3A3A] text-white px-4 py-3 rounded-lg border border-[#4A4A4A]"
+                    placeholder="Username"
+                    placeholderTextColor="#777"
+                    value={editedUsername}
+                    onChangeText={setEditedUsername}
+                  />
+                </View>
+                
+                <View>
+                  <Text className="text-gray-400 mb-1">Email</Text>
+                  <TextInput
+                    className="bg-[#3A3A3A] text-white px-4 py-3 rounded-lg border border-[#4A4A4A]"
+                    placeholder="Email"
+                    placeholderTextColor="#777"
+                    value={editedEmail}
+                    onChangeText={setEditedEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+                </View>
+              </View>
             )}
 
-            <TextInput
-              className="bg-[#444444] text-white p-2 rounded-md mt-4 mb-2"
-              placeholder="Notification Message"
-              placeholderTextColor="#777"
-              value={notificationMessage}
-              onChangeText={setNotificationMessage}
-              multiline
-            />
-            <TouchableOpacity onPress={handleSendNotification} className="bg-purple-500 p-3 rounded-md mb-2">
-              <Text className="text-white font-bold text-center">Send Notification</Text>
-            </TouchableOpacity>
+            {!editMode ? (
+              <View className="mb-6">
+                <Text className="text-gray-400 mb-1">Send Notification</Text>
+                <TextInput
+                  className="bg-[#3A3A3A] text-white px-4 py-3 rounded-lg border border-[#4A4A4A] mb-2"
+                  placeholder="Type notification message..."
+                  placeholderTextColor="#777"
+                  value={notificationMessage}
+                  onChangeText={setNotificationMessage}
+                  multiline
+                  numberOfLines={3}
+                  textAlignVertical="top"
+                />
+                <TouchableOpacity 
+                  onPress={handleSendNotification} 
+                  className={`${!notificationMessage ? 'bg-indigo-500/50' : 'bg-indigo-500'} p-3 rounded-lg`}
+                  disabled={!notificationMessage}
+                >
+                  <Text className="text-white font-semibold text-center">Send Notification</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
 
-            <TouchableOpacity onPress={handleDeleteUser} className="bg-red-500 p-3 rounded-md mt-4">
-              <Text className="text-white font-bold text-center">Delete User</Text>
-            </TouchableOpacity>
+            <View className="flex-row justify-between mb-4">
+              {editMode ? (
+                <>
+                  <TouchableOpacity 
+                    onPress={() => setEditMode(false)} 
+                    className="bg-gray-600 p-3 rounded-lg flex-1 mr-2"
+                  >
+                    <Text className="text-white font-semibold text-center">Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={handleSaveUser} 
+                    className="bg-green-600 p-3 rounded-lg flex-1 ml-2"
+                  >
+                    <Text className="text-white font-semibold text-center">Save Changes</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <TouchableOpacity 
+                    onPress={handleEditUser} 
+                    className="bg-blue-600 p-3 rounded-lg flex-1 mr-2"
+                  >
+                    <Text className="text-white font-semibold text-center">Edit User</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    onPress={handleDeleteUser} 
+                    className="bg-red-600 p-3 rounded-lg flex-1 ml-2"
+                  >
+                    <Text className="text-white font-semibold text-center">Delete User</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
 
-            <TouchableOpacity onPress={closeUserDetails} className="bg-gray-500 p-3 rounded-md mt-2">
-              <Text className="text-white font-bold text-center">Close</Text>
+            <TouchableOpacity 
+              onPress={closeUserDetails} 
+              className="bg-gray-700 p-4 rounded-lg"
+            >
+              <Text className="text-white font-semibold text-center">Close</Text>
             </TouchableOpacity>
           </View>
         </View>

@@ -1,7 +1,7 @@
-import React, { useRef, useEffect, useState } from "react"; // Import useState
-import { View, Text, Animated, Easing, ScrollView, Alert } from "react-native";
+import React, { useRef, useEffect, useState } from "react";
+import { View, Text, Animated, Easing, ScrollView, Alert, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { router } from "expo-router";
 
 import CustomButton from "@/components/CustomButton";
@@ -13,7 +13,7 @@ const Settings = () => {
   const { user, logoutUser } = useUser();
   const { admin, logoutAdmin } = useAdmin();
   const slideAnim = useRef(new Animated.Value(0)).current;
-  const [adminClickCount, setAdminClickCount] = useState(0); // State for click count
+  const [adminClickCount, setAdminClickCount] = useState(0);
 
   useEffect(() => {
     Animated.timing(slideAnim, {
@@ -22,28 +22,22 @@ const Settings = () => {
       easing: Easing.linear,
       useNativeDriver: true,
     }).start();
-  }, [slideAnim]); // Added slideAnim to dependency array
+  }, [slideAnim]);
 
   const handleLogout = () => {
     console.log("Logging out with animation...");
 
-    Animated.timing(slideAnim, {
-      toValue: -500,
-      duration: 150,
-      easing: Easing.linear,
-      useNativeDriver: true,
-    }).start(() => {
+    // Animated.timing(slideAnim, {
+    //   toValue: -500,
+    //   duration: 150,
+    //   easing: Easing.linear,
+    //   useNativeDriver: true,
+    // }).start(() => {
       logoutUser();
       logoutAdmin();
       setAdminClickCount(0);
       router.push("/(tabs)");
-    });
-  };
-
-  console.log("User:", user);
-
-  const animatedStyle = {
-    transform: [{ translateX: slideAnim }],
+    // });
   };
 
   const openAdminPanel = () => {
@@ -56,176 +50,180 @@ const Settings = () => {
       setTimeout(() => {
         router.push("/adminLog");
         setAdminClickCount(0);
-      }, 500); // Added a small delay for the alert to be noticed
+      }, 500);
     } else if (adminClickCount > 5) {
-      // Reset counter if it exceeds 5 to avoid repeated alerts
       setAdminClickCount(0);
     }
   }, [adminClickCount, router]);
 
+  const animatedStyle = {
+    transform: [{ translateX: slideAnim }],
+  };
+
+  // Function to render section header
+  const renderSectionHeader = (title: any, icon: any) => (
+    <View className="flex-row items-center mb-3">
+      {icon}
+      <Text className="text-white text-lg font-bold ml-2">{title}</Text>
+    </View>
+  );
+
+  // Function to render info row
+  const renderInfoRow = (label: any, value: any, isButton = false) => (
+    <View className="flex-row justify-between items-center py-3 border-b border-[#4B4747]">
+      <Text className="text-gray-300">{label}</Text>
+      {isButton ? (
+        <Pressable onPress={openAdminPanel} className="bg-[#4B4747] px-3 py-1 rounded-lg">
+          <Text className="text-white">{value}</Text>
+        </Pressable>
+      ) : (
+        <Text className="text-white">{value}</Text>
+      )}
+    </View>
+  );
+
+  // Function to render team member
+  const renderTeamMember = (name: any, role: any | null) => (
+    <View className="flex-row items-center mb-2">
+      <View className="w-2 h-2 rounded-full bg-[#10B04B] mr-2" />
+      <Text className="text-white">{name}</Text>
+      {role && <Text className="text-gray-400 text-xs ml-2">({role})</Text>}
+    </View>
+  );
+
   return (
     <SafeAreaView className="flex-1 bg-[#2F2C2C]">
       <HeaderSection headerText="Settings" title="Account" />
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View className="flex-1 justify-between flex-col w-full p-6 space-y-4">
-          <View>
-            {user && (
-              <View className="bg-slate-200 rounded-md p-4">
-                <Text className="text-lg font-semibold text-black">
-                  User Details
-                </Text>
-                <View className="border-t border-gray-700 pt-[4px]">
-                  <View className="flex-row justify-between items-center py-2">
-                    <Text className="text-black font-medium">Username</Text>
-                    <Text className="text-gray-800">{user.username}</Text>
-                  </View>
-                  <View className="flex-row justify-between items-center">
-                    <Text className="text-black font-medium">Email</Text>
-                    <Text className="text-gray-800">{user.email}</Text>
-                  </View>
-                  {/* You can add more user details here */}
-                </View>
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <Animated.View style={animatedStyle} className="flex-1 p-4 space-y-6">
+          {/* Profile Section */}
+          {(user || admin) && (
+            <View className="bg-[#3E3A3A] rounded-lg p-4 shadow-md">
+              {renderSectionHeader(
+                "Profile Information",
+                <Ionicons name="person-circle" size={24} color="#3B82F6" />
+              )}
+              
+              <View className="bg-[#2F2C2C] rounded-lg p-4">
+                {admin ? (
+                  <>
+                    {renderInfoRow("Role", "Administrator")}
+                    {renderInfoRow("Title", admin.title)}
+                    {renderInfoRow("Username", admin.username)}
+                    {renderInfoRow("Email", admin.email)}
+                  </>
+                ) : user ? (
+                  <>
+                    {renderInfoRow("Role", "User")}
+                    {renderInfoRow("Username", user.username)}
+                    {renderInfoRow("Email", user.email)}
+                  </>
+                ) : null}
               </View>
-            )}
-          </View>
-          <View>
-            {admin && (
-              <View className="bg-slate-200 rounded-md p-4">
-                <Text className="text-lg font-semibold text-black">
-                  {user?.username
-                    ? "User Details"
-                    : admin?.username
-                    ? "Admin Details"
-                    : ""}
-                </Text>
-                <View className="border-t border-gray-700 pt-[4px]">
-                  {admin && (
-                    <View className="flex-row justify-between items-center pt-2">
-                      <Text className="text-black font-medium">Title</Text>
-                      <Text className="text-gray-800">{admin.title}</Text>
-                    </View>
-                  )}
-                  <View className="flex-row justify-between items-center">
-                    <Text className="text-black font-medium">Username</Text>
-                    <Text className="text-gray-800">{admin.username}</Text>
-                  </View>
-                  <View className="flex-row justify-between items-center">
-                    <Text className="text-black font-medium">Email</Text>
-                    <Text className="text-gray-800">{admin.email}</Text>
-                  </View>
-                  {/* You can add more user details here */}
-                </View>
-              </View>
-            )}
-          </View>
+            </View>
+          )}
 
           {/* App Information Section */}
-          <View className="bg-slate-200 rounded-md my-2 p-4">
-            <View className="">
-              {/* Version */}
-
-              <View className="border-b-[0.5px] flex-row justify-between items-center py-2">
-                <Text className="text-black font-medium">
-                  Application ID:
+          <View className="bg-[#3E3A3A] rounded-lg p-4 shadow-md">
+            {renderSectionHeader(
+              "App Information",
+              <Ionicons name="information-circle" size={24} color="#10B04B" />
+            )}
+            
+            <View className="bg-[#2F2C2C] rounded-lg p-4">
+              {renderInfoRow("Application ID", "CompostSenseV1.0", true)}
+              
+              <View className="py-4 border-b border-[#4B4747]">
+                <Text className="text-gray-300 mb-2">Capstone Project</Text>
+                <Text className="text-white">
+                  Design and Development of an IoT-Based System for Solar and
+                  Thermal Energy Conversion to Electricity from Composting of
+                  Food and Agricultural Waste
                 </Text>
-                <CustomButton
-                  title={"CompostSenseV1.0"}
-                  onPress={openAdminPanel}
-                  containerStyles=""
-                  textStyles="text-gray-800"
-                />
               </View>
+              
+              <View className="py-4">
+                <Text className="text-gray-300 mb-3">Team Thermo</Text>
+                {renderTeamMember("Bernardo, Cedric Levy F.", "")}
+                {renderTeamMember("Laurente, Russel Carlou P.", "")}
+                {renderTeamMember("Padua, Nathan John A.", "")}
+                {renderTeamMember("Verano, Gia Jenica G.", "")}
+                {renderTeamMember("Vivas, Charles David B.", "Developer")}
+              </View>
+            </View>
+          </View>
 
-              {/* Capstone Project Of */}
-              <View className="flex-col py-2">
-                <Text className="text-start text-black font-medium">
-                  Capstone Project:
-                </Text>
-                <View>
-                  <Text className="text-gray-800 text-center font-semibold mt-2">
-                    Design and Development of an IoT-Based System for Solar and
-                    Thermal Energy Conversion to Electricity from Composting of
-                    Food and Agricultural Waste
-                  </Text>
+          {/* System Information */}
+          <View className="bg-[#3E3A3A] rounded-lg p-4 shadow-md">
+            {renderSectionHeader(
+              "System",
+              <Ionicons name="settings-outline" size={24} color="#EF4444" />
+            )}
+            
+            <View className="bg-[#2F2C2C] rounded-lg p-4">
+              {renderInfoRow("Version", "1.0.0")}
+              {renderInfoRow("Last Updated", "March 2025")}
+              {renderInfoRow("Copyright", `© ${new Date().getFullYear()} Team Thermo`)}
+            </View>
+          </View>
+
+          {/* Support & Help */}
+          <View className="bg-[#3E3A3A] rounded-lg p-4 shadow-md">
+            {renderSectionHeader(
+              "Support",
+              <Ionicons name="help-circle" size={24} color="#A855F7" />
+            )}
+            
+            <View className="bg-[#2F2C2C] rounded-lg overflow-hidden">
+              <Pressable className="flex-row justify-between items-center p-4 border-b border-[#4B4747]">
+                <View className="flex-row items-center">
+                  <Ionicons name="document-text-outline" size={20} color="#3B82F6" />
+                  <Text className="text-white ml-3">Documentation</Text>
                 </View>
-              </View>
-
-              {/* Developed By */}
-              <View className="flex-col py-2 mt-2">
-                <View>
-                  <Text className="text-gray-800 text-center font-semibold">
-                    Team Thermo:
-                  </Text>
-                  <Text className="text-gray-800 text-center">
-                    Bernardo, Cedric Levy F.
-                  </Text>
-                  <Text className="text-gray-800 text-center">
-                    Laurente, Russel Carlou P.
-                  </Text>
-                  <Text className="text-gray-800 text-center">
-                    Padua, Nathan John A.
-                  </Text>
-                  <Text className="text-gray-800 text-center">
-                    Verano, Gia Jenica G.
-                  </Text>
-                  <Text className="text-gray-800 text-center">
-                    Vivas, Charles David B.
-                  </Text>
-                  {/* Add other team members here */}
-                  {/* <Text className="text-gray-800">John Doe</Text>
-                    <Text className="text-gray-800">Jane Smith</Text> */}
+                <Ionicons name="chevron-forward" size={20} color="#6B7280" />
+              </Pressable>
+              
+              <Pressable className="flex-row justify-between items-center p-4 border-b border-[#4B4747]">
+                <View className="flex-row items-center">
+                  <Ionicons name="help-buoy-outline" size={20} color="#10B04B" />
+                  <Text className="text-white ml-3">Get Help</Text>
                 </View>
-              </View>
-              <View className="flex-col py-2 mt-2">
-                <View>
-                  <Text className="text-gray-800 text-center font-semibold">
-                    Developer:
-                  </Text>
-                  <Text className="text-gray-800 text-center">
-                    Vivas, Charles David B.
-                  </Text>
-                  {/* Add other team members here */}
-                  {/* <Text className="text-gray-800">John Doe</Text>
-                    <Text className="text-gray-800">Jane Smith</Text> */}
+                <Ionicons name="chevron-forward" size={20} color="#6B7280" />
+              </Pressable>
+              
+              <Pressable className="flex-row justify-between items-center p-4">
+                <View className="flex-row items-center">
+                  <Ionicons name="mail-outline" size={20} color="#EF4444" />
+                  <Text className="text-white ml-3">Contact Developer</Text>
                 </View>
-              </View>
-
-              {/* Copyright */}
-              <View className="flex-row justify-between py-2 border-t-[0.5px]">
-                <Text className="text-start text-black font-medium">
-                  Copyright:
-                </Text>
-                <Text className="">
-                  © {new Date().getFullYear()} Team Thermo
-                </Text>
-              </View>
-
-              {/* You can add more app-related information here */}
+                <Ionicons name="chevron-forward" size={20} color="#6B7280" />
+              </Pressable>
             </View>
           </View>
 
           {/* Logout Button */}
-          {user && (
-            <View className="w-full items-center">
-              <CustomButton
-                title={"LOGOUT"}
-                onPress={handleLogout}
-                containerStyles="w-full min-h-[40px] border-[0.5px] border-red-500 rounded-md bg-gray-200"
-                textStyles="text-[14px] p-4 font-bold text-red"
-              />
-            </View>
+          {(user || admin) && (
+            <Pressable 
+              onPress={handleLogout}
+              className="bg-[#3E3A3A] rounded-lg overflow-hidden"
+            >
+              <View className="flex-row items-center justify-center p-4 border-l-4 border-l-red-500">
+                <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+                <Text className="text-red-500 font-bold ml-2">LOGOUT</Text>
+              </View>
+            </Pressable>
           )}
-          {admin && (
-            <View className="w-full items-center">
-              <CustomButton
-                title={"LOGOUT"}
-                onPress={handleLogout}
-                containerStyles="w-full min-h-[40px] border-[0.5px] border-red-500 rounded-md bg-gray-200"
-                textStyles="text-[14px] p-4 font-bold text-red"
-              />
+          
+          {/* Developer Credit */}
+          <View className="items-center pt-4 pb-8">
+            <View className="flex-row items-center">
+              <Ionicons name="code-slash-outline" size={14} color="#6B7280" />
+              <Text className="text-gray-500 text-xs ml-1">
+                Developed with ❤️ by Team Thermo
+              </Text>
             </View>
-          )}
-        </View>
+          </View>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
