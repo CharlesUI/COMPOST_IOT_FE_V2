@@ -5,61 +5,35 @@ import React, {
   useCallback,
   useRef,
 } from "react";
-import {
-  View,
-  Alert,
-  Text,
-  ActivityIndicator,
-  ScrollView,
-} from "react-native";
+import { View, Alert, Text, ActivityIndicator, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 const { debounce } = require("lodash");
 
-import HeaderSection from "@/components/HeaderSection";
 import CustomButton from "@/components/CustomButton";
 import RealTimeReading from "@/components/RealTimeReading";
 import LineGraphDataVisual from "@/components/LineGraphDataVisual";
-import { useUser } from "@/context/UserContext";
+import { useAdmin } from "@/context/AdminContext";
 import { getYAxisLabelSuffix, getMaxValue } from "@/hooks/deviceFunctions";
 import { AllSavedDataProp } from "@/hooks/APICallTypes";
 import { API_URL_BASE } from "@/constants/API_URL";
+import ChartSkeleton from "@/components/ChartSkeleton";
+import { Pressable } from "react-native";
+import Feather from "@expo/vector-icons/Feather";
+import { router } from "expo-router";
 
-// Create a skeleton loader component for better UX during loading
-const ChartSkeleton = () => (
-  <View className="w-full h-[350px] flex justify-center items-center">
-    <View className="w-[90%] h-[250px] bg-gray-200 rounded-md">
-      <View className="w-full h-6 bg-gray-300 mb-2 rounded-sm" />
-      <View className="w-full flex-1 flex-row">
-        <View className="w-[10%] h-full bg-gray-300 rounded-sm" />
-        <View className="flex-1 flex justify-end">
-          <View className="w-full h-[40%] bg-gray-300 rounded-sm" />
-        </View>
-      </View>
-    </View>
-  </View>
-);
-
-const TIME_INTERVALS: any = {
-  day: 15, // 15 minutes interval for day view (This might still be used for backend querying if needed)
-  week: 180, // 3 hours interval for week view (This might still be used for backend querying if needed)
-  month: 240, // 4 hours interval for month view (This might still be used for backend querying if needed)
-};
-
-const Device = () => {
-  const { user, token, updateToken } = useUser();
+const AdminDevicesTab = () => {
+  const { admin, token } = useAdmin();
+  const deviceIdentifier = admin?.selectedDevice; // Prioritize deviceNumber if both are present\
 
   const [realTimeData, setRealTimeData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // **Refactored Chart Data State - Cache for all combinations:**
-
   const [chartDataCache, setChartDataCache] = useState<{
     [key: string]: AllSavedDataProp;
   }>({});
 
-  // **UI State - Device Type, Time, Parameter Selections (Keep these):**
   const [deviceType, setDeviceType] = useState<"energy" | "compost" | "solar">(
     "energy"
   ); // Initial: Energy
@@ -67,17 +41,46 @@ const Device = () => {
   const [deviceParameter, setDeviceParameter] = useState<string>("voltage"); // Initial: Voltage
   const [selectedReading, setSelectedReading] = useState<string>("BATTERY");
   const [isInitialDataLoaded, setIsInitialDataLoaded] = useState(false);
+  const [currentUsers, setCurrentUsers] = useState<string[]>([]);
 
-  console.log(
-    `${API_URL_BASE}/device/${user?.selectedDevice}/saved-time-frame?timeFrame=${deviceTime}&dataType=${deviceType}&parameter=${deviceParameter}`
-  );
-
-  // Function to fetch real-time data (KEEP)
-  const fetchRealTimeData = useCallback(async () => {
+  const fetchCurrentUsers = useCallback(async () => {
+    if (!deviceIdentifier) {
+      console.log("No device identifier provided, cannot fetch current users.");
+      return;
+    }
     try {
       const tokenForFetch = token;
       const response = await fetch(
-        `${API_URL_BASE}/device/${user?.selectedDevice}/real-time`,
+        `${API_URL_BASE}/admin/users/specific/${deviceIdentifier}`, // Replace with the actual API endpoint
+        {
+          headers: { Authorization: `Bearer ${tokenForFetch}` },
+        }
+      );
+
+      if (!response.ok) {
+        const message = `Workspace current users failed: ${response.status}`;
+        throw new Error(message);
+      }
+      const responseData = await response.json();
+      console.log("Current Users API Response:", responseData);
+      // Assuming the API returns an array of usernames or user objects with a username property
+      setCurrentUsers(responseData.users || []); // Adjust based on the actual response structure
+    } catch (error: any) {
+      console.error("Error fetching current users:", error);
+      // Optionally handle the error (e.g., display a message)
+    }
+  }, [deviceIdentifier, token, API_URL_BASE, setCurrentUsers]);
+
+  // Function to fetch real-time data
+  const fetchRealTimeData = useCallback(async () => {
+    if (!deviceIdentifier) {
+      console.log("No device identifier provided.");
+      return;
+    }
+    try {
+      const tokenForFetch = token;
+      const response = await fetch(
+        `${API_URL_BASE}/device/${deviceIdentifier}/real-time`, // Assuming backend can handle deviceNumber or deviceId
         {
           headers: { Authorization: `Bearer ${tokenForFetch}` },
         }
@@ -101,7 +104,7 @@ const Device = () => {
       setIsLoading(false);
     }
   }, [
-    user?.selectedDevice,
+    deviceIdentifier,
     setIsLoading,
     setError,
     setRealTimeData,
@@ -109,17 +112,17 @@ const Device = () => {
     API_URL_BASE,
   ]);
 
-  // **Refactored fetchChartData to use cache and handle all combinations:**
+  // Refactored fetchChartData to use cache and handle all combinations:
   const fetchChartData = useCallback(
     async (timeFrame: string, dataType: string, parameter: string) => {
-      if (!user?.selectedDevice) {
-        console.log("No device selected, skipping fetch");
+      if (!deviceIdentifier) {
+        console.log("No device identifier selected, skipping fetch");
         return null;
       }
 
-      const cacheKey = `${timeFrame}-${dataType}-${parameter}`; // Unique cache key
+      const cacheKey = `${timeFrame}-${dataType}-${parameter}-${deviceIdentifier}`; // Include deviceIdentifier in cache key
       if (chartDataCache[cacheKey]) {
-        console.log(`WorkspaceChartData - CACHE HIT for ${cacheKey}`);
+        console.log(`AdminDevicesTab - CACHE HIT for ${cacheKey}`);
         return chartDataCache[cacheKey]; // Return cached data if available
       }
 
@@ -134,26 +137,27 @@ const Device = () => {
           dataType,
           parameter,
         }).toString();
-        const apiUrl = `${API_URL_BASE}/device/${user?.selectedDevice}/saved-time-frame?${queryString}`;
+        const apiUrl = `${API_URL_BASE}/device/${deviceIdentifier}/saved-time-frame?${queryString}`;
 
         const response = await fetch(apiUrl, {
           headers: { Authorization: `Bearer ${tokenForFetch}` },
         });
+
 
         if (!response.ok) {
           const message = `Chart data fetch failed: ${response.status}`;
           throw new Error(message);
         }
         const responseData = await response.json();
-        const rawData = responseData.data; // API returns data in responseData.data
 
-        // **Cache and return processed data:**
+        const rawData = responseData.data;
+
         setChartDataCache((prevCache) => ({
           ...prevCache,
           [cacheKey]: rawData, // Store the data directly from the backend
         })); // Update cache
 
-        console.log(`WorkspaceChartData - CACHE UPDATE for ${cacheKey}`);
+        console.log(`AdminDevicesTab - CACHE UPDATE for ${cacheKey}`);
         return rawData; // Return processed data for direct use
       } catch (error: any) {
         console.error("Error fetching chart data:", error);
@@ -168,10 +172,9 @@ const Device = () => {
       }
     },
     [
-      user?.selectedDevice,
+      deviceIdentifier,
       setIsLoading,
       setError,
-      // filterAndFormatAllData, // Removed
       chartDataCache,
       token,
       API_URL_BASE,
@@ -197,7 +200,7 @@ const Device = () => {
     }
   }, [
     fetchRealTimeData,
-    fetchChartData, // fetchChartData is now useCallback and memoized
+    fetchChartData,
     setIsLoading,
     setError,
     setIsInitialDataLoaded,
@@ -207,15 +210,16 @@ const Device = () => {
   ]);
 
   useEffect(() => {
-    if (!user || !user.selectedDevice) {
-      console.log("User or selected device not available yet");
+    if (!deviceIdentifier) {
+      console.log("Device identifier not available yet");
       return;
     }
+    fetchCurrentUsers(); // Call the new function here
 
     fetchInitialData();
-  }, [user, fetchInitialData]); // Add user to dependency array
+  }, [deviceIdentifier, fetchInitialData]);
 
-  // Debounced handlers (KEEP these and modify to use fetchChartData):
+  // Debounced handlers
   const debouncedSetParameter = useRef(
     debounce(async (parameter: string) => {
       setIsLoading(true);
@@ -228,17 +232,16 @@ const Device = () => {
           deviceType === "compost")
       ) {
         const dataType = deviceType;
-        await fetchChartData(deviceTime, dataType, parameter); // Await fetchChartData
+        await fetchChartData(deviceTime, dataType, parameter);
       } else {
         setIsLoading(false);
       }
-      setIsLoading(false); // Ensure loading is set to false after fetch completes or fails
+      setIsLoading(false);
     }, 200)
   ).current;
 
   const debouncedSetTime = useRef(
     debounce(async (time: string) => {
-      // Make debounced function async
       setIsLoading(true);
       setDeviceTime(time);
 
@@ -249,15 +252,15 @@ const Device = () => {
         deviceParameter
       ) {
         const dataType = deviceType;
-        await fetchChartData(time, dataType, deviceParameter); // Await fetchChartData
+        await fetchChartData(time, dataType, deviceParameter);
       } else {
         setIsLoading(false);
       }
-      setIsLoading(false); // Ensure loading is set to false after fetch completes or fails
+      setIsLoading(false);
     }, 200)
   ).current;
 
-  // Event handlers (MODIFY to use fetchChartData):
+  // Event handlers
   const handleTimeClick = (time: string) => {
     debouncedSetTime(time);
   };
@@ -270,9 +273,7 @@ const Device = () => {
     setIsLoading(true);
     setDeviceType("energy");
     setDeviceParameter("voltage");
-
-    await fetchChartData(deviceTime, "energy", "voltage"); // Await fetchChartData
-
+    await fetchChartData(deviceTime, "energy", "voltage");
     setIsLoading(false);
   };
 
@@ -280,9 +281,7 @@ const Device = () => {
     setIsLoading(true);
     setDeviceType("solar");
     setDeviceParameter("voltage");
-
-    await fetchChartData(deviceTime, "solar", "voltage"); // Await fetchChartData
-
+    await fetchChartData(deviceTime, "solar", "voltage");
     setIsLoading(false);
   };
 
@@ -290,9 +289,7 @@ const Device = () => {
     setIsLoading(true);
     setDeviceType("compost");
     setDeviceParameter("methane");
-
-    await fetchChartData(deviceTime, "compost", "methane"); // Await fetchChartData
-
+    await fetchChartData(deviceTime, "compost", "methane");
     setIsLoading(false);
   };
 
@@ -300,7 +297,7 @@ const Device = () => {
     const dataType = deviceType;
     const parameter = deviceParameter;
     const timeFrame = deviceTime;
-    const cacheKey = `${timeFrame}-${dataType}-${parameter}`;
+    const cacheKey = `${timeFrame}-${dataType}-${parameter}-${deviceIdentifier}`;
 
     return (
       chartDataCache[cacheKey] || {
@@ -311,14 +308,19 @@ const Device = () => {
         compostContainerTwo: [],
       }
     );
-  }, [deviceTime, deviceParameter, deviceType, chartDataCache]);
+  }, [
+    deviceTime,
+    deviceParameter,
+    deviceType,
+    chartDataCache,
+    deviceIdentifier,
+  ]);
 
   const selectReading = (title: string) => {
     setSelectedReading(title);
   };
 
-  const currentChartData = getChartDataForDisplay; // Use memoized chart data
-
+  const currentChartData = getChartDataForDisplay;
   console.log(
     "currentChartData",
     currentChartData.tegOne?.length,
@@ -328,19 +330,25 @@ const Device = () => {
     currentChartData.solar?.length
   );
 
-  console.log("USER IN DEVICE", user);
-
+  console.log("ADMIN IN DEVICE", admin);
 
   return (
     <SafeAreaView className="flex-1">
+      <View className="flex-row bg-[#2F2C2C] border-b-[0.5px] border-[#d0cccc] justify-between items-center px-4 py-3">
+        <Pressable onPress={() => router.back()} className="p-2">
+          <Feather name="arrow-left" size={24} color="white" />
+        </Pressable>
+        <Text className="text-lg font-bold color-white">
+          Viewer: {admin?.username}
+        </Text>
+        <View className="w-6" />
+      </View>
       <View className="flex-1">
-        <HeaderSection headerText="Statistics" title="User" />
-
-        {!user?.selectedDevice && (
+        {!deviceIdentifier && (
           <View className="flex-1 justify-center items-center bg-gray-200 ">
             <View className="w-full h-[350px] flex justify-center items-center">
               <Text className="color-gray-400 p-4">
-                No device added or selected yet...
+                No device selected. Please go back and select a device.
               </Text>
               <View className="w-[90%] h-[250px] bg-gray-200 rounded-md">
                 <View className="w-full h-6 bg-gray-300 mb-2 rounded-sm" />
@@ -354,27 +362,41 @@ const Device = () => {
             </View>
           </View>
         )}
-        {user?.selectedDevice && (
+
+        {deviceIdentifier && (
           <ScrollView
             showsVerticalScrollIndicator={false}
             className="flex-1 bg-gray-200"
           >
             <View className="w-full flex justify-center items-center bg-[#2F2C2C]">
               {/* Device Number */}
-              <View className="w-[92.5%] py-3 flex-row border-[#10B04B] border-b-2 flex justify-between items-center mt-2">
+              <View className="w-[92.5%] py-3 flex-col border-[#10B04B] border-b-2 gap-2 flex mt-2">
                 <View className="flex flex-row gap-4">
                   <MaterialIcons name="devices" size={25} color="white" />
                   <Text className="font-semibold color-white">
-                    {user?.selectedDevice}
+                    {deviceIdentifier}
                   </Text>
                 </View>
-
-                <CustomButton
-                  onPress={() => console.log("HELP")}
-                  title="HELP"
-                  containerStyles="border-[0]"
-                  textStyles="color-white"
-                />
+                {currentUsers.length > 0 && (
+                  <View>
+                    <Text className="text-xs color-white">
+                      Current User:
+                    </Text>
+                    <View className="flex-row flex-wrap">
+                      {currentUsers.map((user, index) => (
+                        <Text key={index} className="font-semibold color-white mr-2">
+                          {user}
+                          {index < currentUsers.length - 1 ? "," : ""}
+                        </Text>
+                      ))}
+                    </View>
+                  </View>
+                )}
+                {currentUsers.length === 0 && (
+                  <Text className="text-xs color-white">
+                    No users currently using.
+                  </Text>
+                )}
               </View>
 
               {/* Device Data Buttons */}
@@ -444,7 +466,7 @@ const Device = () => {
                 </View>
               </View>
 
-              {/* Line Chart with Parameter Selection for Energy and Compost*/}
+              {/* Line Chart with Parameter Selection */}
               <View className="w-full flex-col">
                 {!(deviceType === "energy") &&
                   !(deviceType === "compost") &&
@@ -470,23 +492,38 @@ const Device = () => {
                   isInitialDataLoaded && (
                     <>
                       {isLoading ? (
-                        <ChartSkeleton />
+                        <ChartSkeleton description={null} />
                       ) : error ? (
                         <Text style={{ color: "red" }}>{error}</Text>
                       ) : (
                         <>
-                          <LineGraphDataVisual
-                            deviceTime={deviceTime}
-                            chartData={currentChartData} // Use memoized chart data
-                            isLoading={isLoading}
-                            isDeviceCompostSelected={deviceType === "compost"}
-                            isDeviceEnergySelected={deviceType === "energy"}
-                            isSolarSelected={deviceType === "solar"}
-                            deviceParameter={deviceParameter}
-                            getMaxValue={getMaxValue}
-                            getYAxisLabelSuffix={getYAxisLabelSuffix}
-                            handleParameterChange={handleParameterChange}
-                          />
+                          {deviceType === "energy" &&
+                          currentChartData?.tegOne?.length === 0 &&
+                          currentChartData?.tegTwo?.length === 0 ? (
+                            <ChartSkeleton description={"No TEG Data"} />
+                          ) : deviceType === "solar" &&
+                            currentChartData?.solar?.length === 0 ? (
+                            <ChartSkeleton description={"No Solar Data"} />
+                          ) : deviceType === "compost" &&
+                            currentChartData?.compostContainerOne?.length ===
+                              0 &&
+                            currentChartData?.compostContainerTwo?.length ===
+                              0 ? (
+                            <ChartSkeleton description={"No Compost Data"} />
+                          ) : (
+                            <LineGraphDataVisual
+                              deviceTime={deviceTime}
+                              chartData={currentChartData}
+                              isLoading={isLoading}
+                              isDeviceCompostSelected={deviceType === "compost"}
+                              isDeviceEnergySelected={deviceType === "energy"}
+                              isSolarSelected={deviceType === "solar"}
+                              deviceParameter={deviceParameter}
+                              getMaxValue={getMaxValue}
+                              getYAxisLabelSuffix={getYAxisLabelSuffix}
+                              handleParameterChange={handleParameterChange}
+                            />
+                          )}
                         </>
                       )}
                     </>
@@ -527,4 +564,4 @@ const Device = () => {
   );
 };
 
-export default Device;
+export default AdminDevicesTab;

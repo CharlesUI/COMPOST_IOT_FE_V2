@@ -18,6 +18,13 @@ const AddedDevice = () => {
   console.log("addedDevices in AddedDevice", user?.devices); // Add this for debugging
 
   const handleDevicePress = (deviceNumber: string) => {
+    updateUser({
+      _id: user?._id,
+      username: user?.username,
+      email: user?.email,
+      devices: user?.devices,
+      selectedDevice: deviceNumber
+    });
     router.push("/Device"); // Navigate to the Device tab
   };
 
@@ -35,6 +42,13 @@ const AddedDevice = () => {
           onPress: async () => {
             const success = await clearDevices(user?._id); // Clear all devices
             if (success) {
+              updateUser({
+                _id: user?._id,
+                username: user?.username,
+                email: user?.email,
+                devices: [],
+                selectedDevice: null
+              });
               Alert.alert("Success", "All devices cleared successfully!");
               // The UserContext should already be updated by the hook
             } else if (clearDevicesError) {

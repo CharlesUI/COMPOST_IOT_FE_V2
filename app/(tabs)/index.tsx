@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -17,17 +17,19 @@ import AddedDevice from "@/components/AddedDevice";
 import HeaderSection from "@/components/HeaderSection";
 import { useUser } from "@/context/UserContext";
 import useAddDevice from "@/hooks/useAddDevice"; // Import the new hook
-import { API_URL_BASE } from "@/constants/API_URL";
+import { useAdmin } from "@/context/AdminContext";
 
 export interface DeviceTextProp {
   id: string;
   deviceId: string;
 }
 
-const validDeviceIds = ["CMPST10923", "CMPST18276", "CMPST19284"]; // Array of valid device IDs
-
 const HomePage = () => {
-  const { user, logoutUser, updateUser } = useUser(); // Access updateUser
+  const { user, updateUser } = useUser(); // Access updateUser
+  const { admin, updateAdmin } = useAdmin();
+
+  console.log("ADMIN IN HOME", admin);
+
   const {
     addDevice,
     loading: addingDevice,
@@ -63,7 +65,12 @@ const HomePage = () => {
       return;
     }
 
-    if(user?._id === undefined || user?.devices?.length < 0 || user?.email === undefined || user?.username === undefined) {
+    if (
+      user?._id === undefined ||
+      user?.devices?.length < 0 ||
+      user?.email === undefined ||
+      user?.username === undefined
+    ) {
       Alert.alert("Error", "User not found. Please log in.");
       return;
     }
@@ -77,6 +84,7 @@ const HomePage = () => {
         username: user?.username,
         email: user?.email,
         devices: [...user?.devices, text],
+        selectedDevice: text,
       });
       // setAddedDevices([...addedDevices, text]); // Update the context
       setDeviceText("");
@@ -87,13 +95,15 @@ const HomePage = () => {
     }
   };
 
+  console.log("USER IN HOME", user);
+
   return (
     <SafeAreaView className="flex-1 w-full">
       <HeaderSection headerText="CompostSense" title="Log In" />
       <View className="flex-1 bg-[#2F2C2C]">
         <View className="mt-10 mb-[4px] w-full flex-row justify-between px-5">
           <Text className="text-[13px] font-semibold p-1 color-white">
-            Compost Monitoring Server
+            Compost Statistics Server
           </Text>
         </View>
 
@@ -106,7 +116,7 @@ const HomePage = () => {
                 onPress={() => console.log("HELLO MUNA")}
               >
                 <Text className="text-[12px] font-medium text-justify">
-                  Sign in to your compost IoT account and monitor your device.
+                  Sign in to your CompostSense account and monitor your device.
                 </Text>
               </Pressable>
             </View>
@@ -115,7 +125,9 @@ const HomePage = () => {
           <View className="w-[92.5%] bg-slate-200 rounded-lg mx-2">
             <View className=" px-5 py-4 border-gray-800">
               <Pressable className=" mb-2">
-                <Text className="text-[12px] font-medium">Enter Device Number:</Text>
+                <Text className="text-[12px] font-medium">
+                  Enter Device Number:
+                </Text>
               </Pressable>
               <View className="flex justify-around">
                 <TextInput
@@ -151,7 +163,7 @@ const HomePage = () => {
           </View>
         ) : (
           <View className="flex-1 justify-start items-center p-5">
-            <Text className="color-gray-100 opacity-30">No Added Device</Text>
+            <Text className="color-gray-200 opacity-30">No Added Device</Text>
           </View>
         )}
       </View>

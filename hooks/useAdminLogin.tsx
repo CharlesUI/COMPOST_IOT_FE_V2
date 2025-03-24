@@ -1,37 +1,40 @@
 import { useState } from "react";
-import { useUser } from "../context/UserContext"; // Adjust the path if needed
+import { useAdmin } from "@/context/AdminContext";
 import { API_URL_BASE } from "@/constants/API_URL";
 
-const useLogin = () => {
+const useAdminLogin = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const { updateUser, updateToken } = useUser();
+  const { updateAdmin, updateToken } = useAdmin();
 
-  const login = async (email: string, password: string) => {
+  const login = async (username: string, password: string) => {
     setLoading(true);
     setError(null);
 
-    console.log("Login attempt with:", email, password);
+    console.log("Login attempt with:", username, password);
 
     try {
-      const response = await fetch(`${API_URL_BASE}/user/login`, {
+      const response = await fetch(`${API_URL_BASE}/admin/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username, password }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
         updateToken(data.token);
-        updateUser({
-          _id: data._id,
-          username: data.username,
-          email: data.email,
-          devices: data.devices,
-          selectedDevice: null
+        console.log("Response ok", data.admin)
+        updateAdmin({
+          _id: data.admin._id,
+          username: data.admin.username,
+          title: data.admin.title,
+          email: data.admin.email,
+          managedDevices: data.admin.managedDevices,
+          managedUsers: data.admin.managedUsers,
+          selectedDevice: data.admin.selectedDevice || null // Add selectedDevice with a fallback
         });
         return true; // Indicate successful login
       } else {
@@ -52,4 +55,4 @@ const useLogin = () => {
   return { login, loading, error };
 };
 
-export default useLogin;
+export default useAdminLogin;

@@ -1,30 +1,31 @@
 import React from "react";
 import { Tabs } from "expo-router";
-import Colors from "@/constants/Colors";
 import { MaterialCommunityIcons, Entypo } from "@expo/vector-icons";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useUser } from "@/context/UserContext";
-
+import { useAdmin } from "@/context/AdminContext";
 
 const TabsLayout = () => {
   const { user } = useUser();
+  const { admin } = useAdmin();
 
-  const disabler = {
-    href: null
-  }
-
-  const userLoggedIn = user ? false : true;
-
-  const userTab = userLoggedIn && disabler;
+  // Determine if user is logged in
+  const isUserLoggedIn = user !== null && user !== undefined;
+  
+  // Determine if admin is logged in
+  const isAdminLoggedIn = admin !== null && admin !== undefined;
+  
+  // Determine if no one is logged in
+  const noOneLoggedIn = !isUserLoggedIn && !isAdminLoggedIn;
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: "#10B04B",
-        tabBarInactiveTintColor: "lightgray", // Define the inactive tint color
+        tabBarInactiveTintColor: "lightgray",
         tabBarStyle: {
-          backgroundColor: "#2F2C2C", // Replace "lightblue" with your desired color
+          backgroundColor: "#2F2C2C",
           minHeight: 60,
         },
       }}
@@ -37,16 +38,27 @@ const TabsLayout = () => {
           tabBarIcon: ({ color }) => {
             return <Entypo name="home" size={24} color={color} />;
           },
+          href: (isAdminLoggedIn) ? null : undefined,
         }}
       />
       <Tabs.Screen
+        name="AdminDashboard"
+        options={{
+          title: "Dashboard",
+          tabBarLabel: "Dashboard",
+          tabBarIcon: ({ color }) => {
+            return <Entypo name="home" size={24} color={color} />;
+          },
+          href: (isUserLoggedIn || noOneLoggedIn) ? null : undefined,
+        }}
+      />
+      
+      {/* Device tab - available for users, disabled for admins and when no one is logged in */}
+      <Tabs.Screen
         name="Device"
         options={{
-          // href: null, // disable the tab
-          ...
-          userTab,
           title: "Device",
-          tabBarLabel: "Device",
+          tabBarLabel: "Statistics",
           tabBarIcon: ({ color }) => {
             return (
               <MaterialCommunityIcons
@@ -56,13 +68,16 @@ const TabsLayout = () => {
               />
             );
           },
+          href: (isAdminLoggedIn || noOneLoggedIn) ? null : undefined,
         }}
       />
+
+      {/* Manual tab - available for users, disabled for admins and when no one is logged in */}
       <Tabs.Screen
         name="Manual"
         options={{
           title: "Manual",
-          tabBarLabel: "Manual",
+          tabBarLabel: "User Manual",
           tabBarIcon: ({ color }) => {
             return (
               <MaterialCommunityIcons
@@ -72,8 +87,48 @@ const TabsLayout = () => {
               />
             );
           },
+          href: (isAdminLoggedIn || noOneLoggedIn) ? null : undefined,
         }}
       />
+
+      {/* ManageUsers tab - available for admins, disabled for users and when no one is logged in */}
+      <Tabs.Screen
+        name="ManageUsers"
+        options={{
+          title: "ManageUsers",
+          tabBarLabel: "Users",
+          tabBarIcon: ({ color }) => {
+            return (
+              <MaterialCommunityIcons
+                name="flower-tulip"
+                size={24}
+                color={color}
+              />
+            );
+          },
+          href: (isUserLoggedIn || noOneLoggedIn) ? null : undefined,
+        }}
+      />
+
+      {/* ManageDevices tab - available for admins, disabled for users and when no one is logged in */}
+      <Tabs.Screen
+        name="ManageDevices"
+        options={{
+          title: "ManageDevices",
+          tabBarLabel: "Devices",
+          tabBarIcon: ({ color }) => {
+            return (
+              <MaterialCommunityIcons
+                name="flower-tulip"
+                size={24}
+                color={color}
+              />
+            );
+          },
+          href: (isUserLoggedIn || noOneLoggedIn) ? null : undefined,
+        }}
+      />
+
       <Tabs.Screen
         name="Settings"
         options={{

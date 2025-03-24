@@ -65,6 +65,7 @@ export default function Home() {
         username: user?.username,
         email: user?.email,
         devices: [...(user?.devices || []), text],
+        selectedDevice: text
       });
       // No navigation here as it's the main screen
     } else if (addDeviceError) {
@@ -109,6 +110,7 @@ export default function Home() {
           username: user?.username,
           email: user?.email,
           devices: [...(user?.devices || [])],
+          selectedDevice: data
         });
         setHasScanned(false); // Allow scanning again
         qrLock.current = false;
@@ -144,7 +146,7 @@ export default function Home() {
         {cameraReady && (
           <View style={styles.overlay}>
             <View style={styles.header}>
-              <Text style={styles.headerText}>Scan a CompostIoT Device</Text>
+              <Text style={styles.headerText}>Scan a CompostSense Device</Text>
             </View>
 
             <Canvas style={styles.canvas}>

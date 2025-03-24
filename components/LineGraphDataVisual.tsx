@@ -28,7 +28,7 @@ interface LineGraphProps {
   isSolarSelected: boolean;
   isDeviceEnergySelected: boolean;
   deviceParameter: string | undefined;
-  getMaxValue: (deviceParameter: string) => 20 | 5 | 100 | 15 | 80;
+  getMaxValue: (deviceParameter: string) => 20 | 5 | 100 | 10000 | 80;
   getYAxisLabelSuffix: (
     deviceParameter: string
   ) => "" | "V" | "A" | "W" | "ppm" | "%" | "°C";
@@ -47,25 +47,25 @@ const LineGraphDataVisual = ({
   getYAxisLabelSuffix,
   handleParameterChange,
 }: LineGraphProps) => {
+
   console.log("--------------------------------------------------");
-  console.log("  LineGraphDataVisual - Props Received: ");
-  console.log("  deviceTime:", deviceTime);
-  console.log("  deviceParameter:", deviceParameter);
-  console.log("  COMPOST:", isDeviceCompostSelected);
-  console.log("  ENERGY:", isDeviceEnergySelected);
-  console.log("  isLoading:", isLoading);
+  console.log(" LineGraphDataVisual - Props Received: ");
+  console.log(" deviceTime:", deviceTime, "  deviceParameter:", deviceParameter, "  COMPOST:", isDeviceCompostSelected, "  ENERGY:", isDeviceEnergySelected ,"  isLoading:", isLoading);
   console.log("--------------------------------------------------");
 
   // console.log(" CHART DATA: ", chartData);
-  console.log(" SOLAR:", chartData?.solar?.length);
-  console.log("--------------------------------------------------");
-  console.log(" TEGONE:", chartData?.tegOne?.length);
-  console.log("--------------------------------------------------");
-  console.log(" TEGTWO:", chartData?.tegTwo?.length);
-  console.log("--------------------------------------------------");
-  console.log(" COMPOST1:", chartData?.compostContainerOne?.length);
-  console.log("--------------------------------------------------");
-  console.log(" COMPOST2:", chartData?.compostContainerTwo?.length);
+  console.log(
+    " SOLAR:",
+    chartData?.solar?.length,
+    " TEGONE:",
+    chartData?.tegOne?.length,
+    " TEGTWO:",
+    chartData?.tegTwo?.length,
+    " COMPOST1:",
+    chartData?.compostContainerOne?.length,
+    " COMPOST2:",
+    chartData?.compostContainerTwo?.length
+  );
   console.log("--------------------------------------------------");
 
   // Console log the length of solar data
@@ -86,11 +86,17 @@ const LineGraphDataVisual = ({
     } else {
       return chartData?.compostContainerOne ?? [];
     }
-  }, [chartData, isDeviceEnergySelected, isSolarSelected, visibleStartIndex, visibleEndIndex]);
+  }, [
+    chartData,
+    isDeviceEnergySelected,
+    isSolarSelected,
+    visibleStartIndex,
+    visibleEndIndex,
+  ]);
 
   const visibleChartData2 = useMemo(() => {
     return isDeviceEnergySelected
-      ? chartData?.tegTwo ?? []// Use tegTwo for data2 when energy is selected
+      ? chartData?.tegTwo ?? [] // Use tegTwo for data2 when energy is selected
       : chartData?.compostContainerTwo ?? [];
   }, [chartData, isDeviceEnergySelected, visibleStartIndex, visibleEndIndex]);
 
@@ -152,7 +158,12 @@ const LineGraphDataVisual = ({
       default:
         return "";
     }
-  }, [deviceTime, isDeviceEnergySelected, isDeviceCompostSelected, isSolarSelected]);
+  }, [
+    deviceTime,
+    isDeviceEnergySelected,
+    isDeviceCompostSelected,
+    isSolarSelected,
+  ]);
 
   const getReadingType = () => {
     if (isSolarSelected) {
@@ -383,12 +394,11 @@ const LineGraphDataVisual = ({
             <View className="h-[350px] min-h-[350px] overflow-hidden bg-[#2F2C2C]">
               <Animated.View style={{ opacity: fadeAnim }}>
                 {!isLoading && lengthChecker ? (
-                  visibleChartData1 &&
-                  visibleChartData1.length > 0 ? (
+                  visibleChartData1 && visibleChartData1.length > 0 ? (
                     <LineChart
                       {...chartProps}
-                      hideDataPoints1
-                      hideDataPoints2
+                      // hideDataPoints1
+                      // hideDataPoints2
                     />
                   ) : (
                     <View className="w-full h-[360px] min-h-[360px] rounded-md justify-center items-center">
@@ -420,8 +430,8 @@ const LineGraphDataVisual = ({
                         param === "temperatureIn"
                           ? "Temp In"
                           : param === "temperatureOut"
-                            ? "Temp Out"
-                            : param.charAt(0).toUpperCase() + param.slice(1)
+                          ? "Temp Out"
+                          : param.charAt(0).toUpperCase() + param.slice(1)
                       }
                       textStyles="text-[8px] font-bold color-white"
                       containerStyles={`flex-1 py-2 align-center border-2 bg-gray-800 ${

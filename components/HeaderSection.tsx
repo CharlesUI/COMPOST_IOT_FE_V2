@@ -6,6 +6,7 @@ import { useUser } from "@/context/UserContext";
 import { router } from "expo-router";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { TouchableOpacity } from "react-native";
+import { useAdmin } from "@/context/AdminContext";
 
 interface HeaderProps {
   headerText: string;
@@ -24,6 +25,9 @@ const goToUserNotification = () => {
 
 const HeaderSection = ({ headerText, title }: HeaderProps) => {
   const { user, logoutUser } = useUser();
+  const { admin } = useAdmin()
+
+  console.log(admin)
 
   return (
     <View className="flex max-h-[80px] flex-row justify-between items-center p-5 pl-2 bg-[#2F2C2C] border-b-[0.5px] border-[#d0cccc]">
@@ -51,7 +55,13 @@ const HeaderSection = ({ headerText, title }: HeaderProps) => {
           </TouchableOpacity>
         )}
         <CustomButton
-          title={user?.username ? user.username : "LOGIN"}
+          title={
+            user?.username
+              ? user.username
+              : admin?.username
+              ? admin.username
+              : "LOGIN"
+          }
           onPress={
             !user ? goToUserLog : () => console.log("Punta profile page")
           }

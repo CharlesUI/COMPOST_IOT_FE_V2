@@ -4,7 +4,8 @@ export interface User {
     _id: string | undefined;
     username: string | undefined;
     email: string | undefined;
-    devices?: string[] | any; // Assuming devices is optional
+    devices: string[] | any; // Assuming devices is optional
+    selectedDevice: string | null
     // Add other properties as needed
   }
 
