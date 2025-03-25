@@ -6,6 +6,7 @@ import React, {
   useEffect,
 } from "react";
 import { View, Text, Animated, ActivityIndicator } from "react-native";
+import { TouchableOpacity } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
 import {
   format,
@@ -47,10 +48,20 @@ const LineGraphDataVisual = ({
   getYAxisLabelSuffix,
   handleParameterChange,
 }: LineGraphProps) => {
-
   console.log("--------------------------------------------------");
   console.log(" LineGraphDataVisual - Props Received: ");
-  console.log(" deviceTime:", deviceTime, "  deviceParameter:", deviceParameter, "  COMPOST:", isDeviceCompostSelected, "  ENERGY:", isDeviceEnergySelected ,"  isLoading:", isLoading);
+  console.log(
+    " deviceTime:",
+    deviceTime,
+    "  deviceParameter:",
+    deviceParameter,
+    "  COMPOST:",
+    isDeviceCompostSelected,
+    "  ENERGY:",
+    isDeviceEnergySelected,
+    "  isLoading:",
+    isLoading
+  );
   console.log("--------------------------------------------------");
 
   // console.log(" CHART DATA: ", chartData);
@@ -169,9 +180,9 @@ const LineGraphDataVisual = ({
     if (isSolarSelected) {
       return { data1Label: "Solar", data2Label: "" };
     } else if (isDeviceEnergySelected && !isDeviceCompostSelected) {
-      return { data1Label: "TEG 1", data2Label: "TEG 2" }; // Updated labels to reflect the change
+      return { data1Label: "TEG: COCO", data2Label: "TEG: MIXED" }; // Updated labels to reflect the change
     } else if (!isDeviceEnergySelected && isDeviceCompostSelected) {
-      return { data1Label: "Compost 1", data2Label: "Compost 2" };
+      return { data1Label: "COCO", data2Label: "MIXED" };
     } else {
       return { data1Label: "Data 1", data2Label: "Data 2" }; // Default or handle error
     }
@@ -416,49 +427,66 @@ const LineGraphDataVisual = ({
                 )}
               </Animated.View>
             </View>
+            {/* Energy and Compost Parameter Buttons */}
             {(isDeviceEnergySelected || isDeviceCompostSelected) && (
-              <View className="w-full justify-center items-center bg-[#2F2C2C]">
-                <View className="w-[72.5%] gap-2 pt-2 flex-row flex justify-between items-center">
+              <View className="w-full justify-center items-center bg-[#1E1E1E] py-4">
+                <View className="w-[90%] gap-3 flex-row justify-between items-center">
                   {(isDeviceEnergySelected
                     ? ["voltage", "current", "wattage"]
                     : ["methane", "moisture", "temperatureIn", "temperatureOut"]
                   ).map((param) => (
-                    <CustomButton
+                    <TouchableOpacity
                       key={param}
                       onPress={() => handleParameterChange(param)}
-                      title={
-                        param === "temperatureIn"
+                      className={`flex-1 p-3 rounded-xl items-center justify-center ${
+                        deviceParameter === param
+                          ? "bg-[#10B04B]/30 border-2 border-[#10B04B]"
+                          : "bg-[#2A2A2A]"
+                      }`}
+                    >
+                      <Text
+                        className={`text-[7px] font-bold uppercase ${
+                          deviceParameter === param
+                            ? "text-white"
+                            : "text-gray-400"
+                        }`}
+                      >
+                        {param === "temperatureIn"
                           ? "Temp In"
                           : param === "temperatureOut"
                           ? "Temp Out"
-                          : param.charAt(0).toUpperCase() + param.slice(1)
-                      }
-                      textStyles="text-[8px] font-bold color-white"
-                      containerStyles={`flex-1 py-2 align-center border-2 bg-gray-800 ${
-                        deviceParameter === param
-                          ? "border-[#10B04B] border-2"
-                          : "border-gray-100 border-[0.5px]"
-                      }`}
-                    />
+                          : param.charAt(0).toUpperCase() + param.slice(1)}
+                      </Text>
+                    </TouchableOpacity>
                   ))}
                 </View>
               </View>
             )}
+
+            {/* Solar Parameter Buttons */}
             {isSolarSelected && (
-              <View className="w-full justify-center items-center bg-[#2F2C2C]">
-                <View className="w-[72.5%] gap-2 pt-2 flex-row flex justify-between items-center">
+              <View className="w-full justify-center items-center bg-[#1E1E1E] py-4">
+                <View className="w-[90%] gap-3 flex-row justify-between items-center">
                   {["voltage", "current", "wattage"].map((param) => (
-                    <CustomButton
+                    <TouchableOpacity
                       key={param}
                       onPress={() => handleParameterChange(param)}
-                      title={param.charAt(0).toUpperCase() + param.slice(1)}
-                      textStyles="text-[8px] font-bold color-white"
-                      containerStyles={`flex-1 py-2 align-center border-2 bg-gray-800 ${
+                      className={`flex-1 p-3 rounded-xl items-center justify-center ${
                         deviceParameter === param
-                          ? "border-[#eec643] border-2"
-                          : "border-gray-100 border-[0.5px]"
+                          ? "bg-[#EEC643]/30 border-2 border-[#EEC643]"
+                          : "bg-[#2A2A2A]"
                       }`}
-                    />
+                    >
+                      <Text
+                        className={`text-[7px] font-bold uppercase ${
+                          deviceParameter === param
+                            ? "text-white"
+                            : "text-gray-400"
+                        }`}
+                      >
+                        {param.charAt(0).toUpperCase() + param.slice(1)}
+                      </Text>
+                    </TouchableOpacity>
                   ))}
                 </View>
               </View>

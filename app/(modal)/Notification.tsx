@@ -310,11 +310,11 @@ const Notification = () => {
   const ListHeaderComponent = () => (
     <View style={styles.headerContainer}>
       <Text style={styles.headerTitle}>Recent</Text>
-      {allNotifications.length > 0 && (
+      {/* {allNotifications.length > 0 && (
         <Pressable style={styles.clearAllButton} onPress={() => console.log("Clear all")}>
           <Text style={styles.clearAllText}>Clear all</Text>
         </Pressable>
-      )}
+      )} */}
     </View>
   );
 

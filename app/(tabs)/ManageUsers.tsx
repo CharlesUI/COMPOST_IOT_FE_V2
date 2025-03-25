@@ -247,7 +247,6 @@ const ManageUsers = () => {
     return (
       <SafeAreaView className="flex-1 bg-[#242424] items-center justify-center">
         <StatusBar barStyle="light-content" />
-        <HeaderSection headerText="Manage Users" title="Admin" />
         <ActivityIndicator size="large" color="#6366F1" />
         <Text className="text-white mt-4">Loading users...</Text>
       </SafeAreaView>
@@ -282,7 +281,7 @@ const ManageUsers = () => {
         <View className="bg-[#3A3A3A] rounded-lg px-3 py-2 flex-row items-center border border-[#4A4A4A]">
           <Ionicons name="search" size={20} color="#9CA3AF" />
           <TextInput
-            className="flex-1 text-white ml-2 h-10"
+            className="flex-1 text-white ml-2"
             placeholder="Search users..."
             placeholderTextColor="#9CA3AF"
             value={searchQuery}

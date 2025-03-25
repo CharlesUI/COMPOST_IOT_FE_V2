@@ -12,17 +12,15 @@ const ChartSkeleton = ({ description }: ChartProps) => {
   return (
     <View className="flex-1 justify-center items-center">
       <View className="w-full h-[350px] flex justify-center items-center">
-        <View className="w-[90%] h-[250px] bg-gray-200 rounded-md">
-          <Text className="color-gray-400 p-4 text-center">{chartDescription}</Text>
-          <View className="w-full h-6 bg-gray-300 mb-2 rounded-sm" />
-          <View className="w-full flex-1 flex-row">
-            <View className="w-[10%] h-full bg-gray-300 rounded-sm" />
-            <View className="flex-1 flex justify-end">
-              <View className="w-full h-[40%] bg-gray-300 rounded-sm" />
+          <View className="w-full justify-center items-center bg-[#1E1E1E] px-4">
+            <View className="w-full bg-[#2A2A2A] rounded-2xl p-6 shadow-lg">
+              <Text className="text-gray-400 text-center text-lg mb-4">
+                {chartDescription}
+              </Text>
+              <View className="w-full h-[200px] bg-[#3A3A3A] rounded-xl animate-pulse" />
             </View>
           </View>
         </View>
-      </View>
     </View>
   );
 };

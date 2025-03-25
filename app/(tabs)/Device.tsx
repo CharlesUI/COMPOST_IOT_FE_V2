@@ -5,15 +5,10 @@ import React, {
   useCallback,
   useRef,
 } from "react";
-import {
-  View,
-  Alert,
-  Text,
-  ActivityIndicator,
-  ScrollView,
-} from "react-native";
+import { View, Alert, Text, ActivityIndicator, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
+import { TouchableOpacity } from "react-native";
 const { debounce } = require("lodash");
 
 import HeaderSection from "@/components/HeaderSection";
@@ -28,13 +23,12 @@ import { API_URL_BASE } from "@/constants/API_URL";
 // Create a skeleton loader component for better UX during loading
 const ChartSkeleton = () => (
   <View className="w-full h-[350px] flex justify-center items-center">
-    <View className="w-[90%] h-[250px] bg-gray-200 rounded-md">
-      <View className="w-full h-6 bg-gray-300 mb-2 rounded-sm" />
-      <View className="w-full flex-1 flex-row">
-        <View className="w-[10%] h-full bg-gray-300 rounded-sm" />
-        <View className="flex-1 flex justify-end">
-          <View className="w-full h-[40%] bg-gray-300 rounded-sm" />
-        </View>
+    <View className="w-full justify-center items-center bg-[#1E1E1E] px-4">
+      <View className="w-full bg-[#2A2A2A] rounded-2xl p-6 shadow-lg">
+        <Text className="text-gray-400 text-center text-lg mb-4">
+          Loading...
+        </Text>
+        <View className="w-full h-[200px] bg-[#3A3A3A] rounded-xl animate-pulse" />
       </View>
     </View>
   </View>
@@ -71,6 +65,18 @@ const Device = () => {
   console.log(
     `${API_URL_BASE}/device/${user?.selectedDevice}/saved-time-frame?timeFrame=${deviceTime}&dataType=${deviceType}&parameter=${deviceParameter}`
   );
+
+  // Create a memoized reset function
+  const resetDeviceStates = useCallback(() => {
+    setRealTimeData(null);
+    setChartDataCache({});
+    setDeviceType("energy");
+    setDeviceTime("day");
+    setDeviceParameter("voltage");
+    setSelectedReading("BATTERY");
+    setIsInitialDataLoaded(false);
+    setError(null);
+  }, []);
 
   // Function to fetch real-time data (KEEP)
   const fetchRealTimeData = useCallback(async () => {
@@ -215,6 +221,10 @@ const Device = () => {
     fetchInitialData();
   }, [user, fetchInitialData]); // Add user to dependency array
 
+  useEffect(() => {
+    resetDeviceStates();
+  }, [user?.selectedDevice]);
+
   // Debounced handlers (KEEP these and modify to use fetchChartData):
   const debouncedSetParameter = useRef(
     debounce(async (parameter: string) => {
@@ -330,41 +340,30 @@ const Device = () => {
 
   console.log("USER IN DEVICE", user);
 
-
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView className="flex-1 bg-[#121212]">
       <View className="flex-1">
         <HeaderSection headerText="Statistics" title="User" />
 
         {!user?.selectedDevice && (
-          <View className="flex-1 justify-center items-center bg-gray-200 ">
-            <View className="w-full h-[350px] flex justify-center items-center">
-              <Text className="color-gray-400 p-4">
+          <View className="flex-1 justify-center items-center bg-[#1E1E1E] px-4">
+            <View className="w-full bg-[#2A2A2A] rounded-2xl p-6 shadow-lg">
+              <Text className="text-gray-400 text-center text-lg mb-4">
                 No device added or selected yet...
               </Text>
-              <View className="w-[90%] h-[250px] bg-gray-200 rounded-md">
-                <View className="w-full h-6 bg-gray-300 mb-2 rounded-sm" />
-                <View className="w-full flex-1 flex-row">
-                  <View className="w-[10%] h-full bg-gray-300 rounded-sm" />
-                  <View className="flex-1 flex justify-end">
-                    <View className="w-full h-[40%] bg-gray-300 rounded-sm" />
-                  </View>
-                </View>
-              </View>
+              <View className="w-full h-[200px] bg-[#3A3A3A] rounded-xl animate-pulse" />
             </View>
           </View>
         )}
+
         {user?.selectedDevice && (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            className="flex-1 bg-gray-200"
-          >
-            <View className="w-full flex justify-center items-center bg-[#2F2C2C]">
-              {/* Device Number */}
-              <View className="w-[92.5%] py-3 flex-row border-[#10B04B] border-b-2 flex justify-between items-center mt-2">
-                <View className="flex flex-row gap-4">
-                  <MaterialIcons name="devices" size={25} color="white" />
-                  <Text className="font-semibold color-white">
+          <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+            <View className="bg-[#1E1E1E] rounded-b-3xl overflow-hidden">
+              {/* Device Number Section with Elegant Design */}
+              <View className="w-full px-4 py-4 bg-[#2A2A2A] flex-row justify-between items-center">
+                <View className="flex-row items-center space-x-3">
+                  <MaterialIcons name="devices" size={28} color="#10B04B" />
+                  <Text className="text-white text-lg font-semibold">
                     {user?.selectedDevice}
                   </Text>
                 </View>
@@ -372,65 +371,65 @@ const Device = () => {
                 <CustomButton
                   onPress={() => console.log("HELP")}
                   title="HELP"
-                  containerStyles="border-[0]"
-                  textStyles="color-white"
+                  containerStyles="bg-[#10B04B]/20 px-4 py-2 rounded-full"
+                  textStyles="text-[#10B04B] font-bold"
                 />
               </View>
 
-              {/* Device Data Buttons */}
-              <View className="w-full justify-center items-center mt-4">
-                <View className="w-[72.5%] py-2 flex-row flex justify-between items-center mt-2 gap-2">
-                  <CustomButton
-                    onPress={handleDeviceEnergyClick}
-                    title="TEG"
-                    textStyles="text-[8px] font-bold color-white"
-                    containerStyles={`flex-1 p-2 align-center bg-gray-800 ${
-                      deviceType === "energy"
-                        ? "border-[#10B04B] border-2"
-                        : "border-gray-100 border-[0.5px]"
-                    }`}
-                  />
-                  <CustomButton
-                    onPress={handleSolarEnergyClick}
-                    title="Solar"
-                    textStyles="text-[8px] font-bold color-white"
-                    containerStyles={`flex-1 p-2 align-center bg-gray-800 ${
-                      deviceType === "solar"
-                        ? "border-[#10B04B] border-2"
-                        : "border-gray-100 border-[0.5px]"
-                    }`}
-                  />
-
-                  <CustomButton
-                    onPress={handleDeviceCompostClick}
-                    title="Compost Data"
-                    textStyles="text-[8px] font-bold color-white"
-                    containerStyles={`flex-1 p-2 align-center bg-gray-800 ${
-                      deviceType === "compost"
-                        ? "border-[#10B04B] border-2"
-                        : "border-gray-100 border-[0.5px]"
-                    }`}
-                  />
+              {/* Device Type Selection with Improved UI */}
+              <View className="px-4 mt-4">
+                <View className="flex-row gap-2 space-x-3 justify-between">
+                  {[
+                    {
+                      title: "TEG",
+                      type: "energy",
+                      onPress: handleDeviceEnergyClick,
+                    },
+                    {
+                      title: "Solar",
+                      type: "solar",
+                      onPress: handleSolarEnergyClick,
+                    },
+                    {
+                      title: "Compost",
+                      type: "compost",
+                      onPress: handleDeviceCompostClick,
+                    },
+                  ].map((device) => (
+                    <CustomButton
+                      key={device.type}
+                      onPress={device.onPress}
+                      title={device.title}
+                      textStyles={`text-xs font-bold ${
+                        deviceType === device.type
+                          ? "text-white"
+                          : "text-gray-400"
+                      }`}
+                      containerStyles={`flex-1 p-3 rounded-xl ${
+                        deviceType === device.type
+                          ? "bg-[#10B04B]/30 border-2 border-[#10B04B]"
+                          : "bg-[#2A2A2A]"
+                      }`}
+                    />
+                  ))}
                 </View>
+              </View>
 
-                {/* Time Period Buttons */}
-                <View className="w-[72.5%] pb-3 gap-2 flex-row flex justify-between items-center">
+              {/* Time Period Selection with Improved Design */}
+              <View className="px-4 mt-4">
+                <View className="flex-row gap-2 space-x-3">
                   {["day", "week", "month"].map((time) => (
                     <CustomButton
                       key={time}
                       onPress={() => handleTimeClick(time)}
-                      title={time.charAt(0).toUpperCase() + time.slice(1)} // Capitalize first letter
-                      textStyles="text-[8px] font-bold color-white"
-                      containerStyles={`flex-1 align-center p-2 bg-gray-800 ${
+                      title={time.charAt(0).toUpperCase() + time.slice(1)}
+                      textStyles={`text-xs font-bold ${
+                        deviceTime === time ? "text-white" : "text-gray-400"
+                      }`}
+                      containerStyles={`flex-1 p-3 rounded-xl ${
                         deviceTime === time
-                          ? "border-[#10B04B] border-2"
-                          : "border-gray-100 border-[0.5px]"
-                      } ${
-                        !(
-                          deviceType === "energy" ||
-                          deviceType === "solar" ||
-                          deviceType === "compost"
-                        ) && "opacity-50 border-green-4 bg-transparent"
+                          ? "bg-[#10B04B]/30 border-2 border-[#10B04B]"
+                          : "bg-[#2A2A2A]"
                       }`}
                       disabled={
                         !(
@@ -493,31 +492,48 @@ const Device = () => {
                   )}
               </View>
 
-              {/* Reading for Power*/}
-              <View className="w-full justify-center items-center p-5 border-gray-100 border-t-[0.5px]">
-                <View className="w-full flex-row justify-center items-center pt-2 bg-[#2F2C2C]">
-                  <View className="w-full flex-row justify-between items-center  gap-[1px] bg-[#2F2C2C]">
+              {/* Replace the existing reading buttons section with this */}
+              <View className="w-full justify-center items-center p-5 bg-[#1E1E1E]">
+                <View className="w-full bg-[#2A2A2A] rounded-2xl overflow-hidden">
+                  <View className="flex-row">
                     {["SOLAR", "BATTERY", "COMPOST #1", "COMPOST #2"].map(
                       (itemTitle) => (
-                        <CustomButton
+                        <TouchableOpacity
                           key={itemTitle}
                           onPress={() => selectReading(itemTitle)}
-                          title={itemTitle}
-                          textStyles="text-[7px] font-bold color-white"
-                          containerStyles={`flex-1 py-5 align-center bg-gray-800 ${
+                          className={`flex-1 p-4 items-center justify-center ${
                             selectedReading === itemTitle
-                              ? "border-[#10B04B] border-2"
-                              : ""
+                              ? "bg-[#10B04B]/30 border-b-2 border-[#10B04B]"
+                              : "bg-[#2A2A2A]"
                           }`}
-                        />
+                        >
+                          <Text
+                            className={`text-xs font-bold uppercase ${
+                              selectedReading === itemTitle
+                                ? "text-white"
+                                : "text-gray-400"
+                            }`}
+                          >
+                            {itemTitle === "COMPOST #1"
+                              ? "COCO"
+                              : itemTitle === "COMPOST #2"
+                              ? "MIXED"
+                              : itemTitle}
+                          </Text>
+                        </TouchableOpacity>
                       )
                     )}
                   </View>
+
+                  {/* Subtle divider */}
+                  <View className="h-[1px] w-full bg-[#10B04B]/20" />
+
+                  {/* RealTimeReading component */}
+                  <RealTimeReading
+                    realTimeData={realTimeData}
+                    selectedReading={selectedReading}
+                  />
                 </View>
-                <RealTimeReading
-                  realTimeData={realTimeData}
-                  selectedReading={selectedReading}
-                />
               </View>
             </View>
           </ScrollView>

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, Pressable, Alert } from "react-native";
-import Feather from "@expo/vector-icons/Feather";
-
-import CustomButton from "./CustomButton";
+import { View, Text, TextInput, Pressable, Alert, ActivityIndicator, TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons"; // Using Ionicons for consistency
 import { AdminLogInDetails } from "@/app/(modal)/adminLog";
 
 interface LogData {
@@ -34,63 +32,68 @@ const AdminLogInBox = ({
           {
             text: "OK",
             onPress: () => {
-              // Optionally, you can reset the error state here if you want
+              // Optionally, you can reset the error state here if needed
               // (though the useLogin hook currently clears it on the next attempt)
               // setError(null); // This would require passing the setError function down
             },
           },
         ]
       );
-
     }
   }, [error]);
 
   return (
-    <View className="w-[90%] bg-slate-200 p-5 m-2 rounded-md">
-      <View className="">
+    <View className="w-[90%] bg-[#3A3A3A] p-6 rounded-xl shadow-md border border-[#4A4A4A]">
+      <Text className="text-white text-xl font-bold mb-4 text-center">Admin Login</Text>
+      <View className="mb-3">
+        <Text className="text-gray-400 mb-1">Username</Text>
         <TextInput
           placeholder="admin"
+          placeholderTextColor="#777"
           value={username}
           onChangeText={(text) => {
             setLogInDetails((prevData) => {
               return { ...prevData, username: text };
             });
           }}
-          className=" border-[0.5px] mb-4 rounded-md p-3"
+          className="bg-[#2A2A2A] text-white rounded-lg py-3 px-4 border border-[#4A4A4A]"
         />
+      </View>
+      <View className="mb-4">
+        <Text className="text-gray-400 mb-1">Password</Text>
         <View className="relative w-full">
           <TextInput
             secureTextEntry={!togglePass}
             placeholder="password"
+            placeholderTextColor="#777"
             value={password}
             onChangeText={(text) => {
               setLogInDetails((prevData) => {
                 return { ...prevData, password: text };
               });
             }}
-            className=" border-[0.5px] mb-4 rounded-md p-3"
+            className="bg-[#2A2A2A] text-white rounded-lg py-3 px-4 border border-[#4A4A4A]"
           />
-          <View className="absolute right-3 top-3">
-            <Pressable onPress={() => setTogglePass(!togglePass)}>
-              <Feather
-                name={!togglePass ? "eye-off" : "eye"}
-                size={24}
-                color="black"
-              />
-            </Pressable>
-          </View>
+          <TouchableOpacity
+            onPress={() => setTogglePass(!togglePass)}
+            className="absolute right-3 top-3"
+          >
+            <Ionicons name={!togglePass ? "eye-off-outline" : "eye-outline"} size={24} color="#9CA3AF" />
+          </TouchableOpacity>
         </View>
-        {/* {error && (
-          <Text className="text-red-500 mb-2">{error}</Text>
-        )} */}
-        <CustomButton
-          containerStyles="min-h-[50px] rounded-md bg-gray-800"
-          textStyles="text-white"
-          title={loading ? "Logging In..." : "Log In"}
-          onPress={handleLogInUser}
-          disabled={loading}
-        ></CustomButton>
       </View>
+      <TouchableOpacity
+        onPress={handleLogInUser}
+        className={`bg-indigo-500 py-3 rounded-lg items-center justify-center ${loading ? 'opacity-70' : ''}`}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <Text className="text-white font-semibold text-lg">Log In</Text>
+        )}
+      </TouchableOpacity>
+      {error && <Text className="text-red-500 mt-3 text-center">{error}</Text>}
     </View>
   );
 };

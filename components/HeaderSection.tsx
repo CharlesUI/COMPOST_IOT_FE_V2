@@ -1,11 +1,8 @@
-import { View, Text } from "react-native";
-import CustomButton from "./CustomButton";
-import { Image } from "react-native";
+import { View, Text, Image, TouchableOpacity } from "react-native";
 import React from "react";
 import { useUser } from "@/context/UserContext";
 import { router } from "expo-router";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { TouchableOpacity } from "react-native";
+import { Ionicons } from "@expo/vector-icons"; // Using Ionicons for consistency
 import { useAdmin } from "@/context/AdminContext";
 
 interface HeaderProps {
@@ -16,58 +13,47 @@ interface HeaderProps {
 const COMPOST_IMAGE = require("@/assets/images/COMPOST_IOT.png");
 
 const goToUserLog = () => {
-  router.push("/userLog");
+  router.push("/(modal)/userLog"); // Ensure modal route if that's the case
 };
 
 const goToUserNotification = () => {
-  router.push("/Notification");
+  router.push("/Notification"); // Assuming Notification is a tab
 };
 
 const HeaderSection = ({ headerText, title }: HeaderProps) => {
   const { user, logoutUser } = useUser();
-  const { admin } = useAdmin()
-
-  console.log(admin)
+  const { admin } = useAdmin();
 
   return (
-    <View className="flex max-h-[80px] flex-row justify-between items-center p-5 pl-2 bg-[#2F2C2C] border-b-[0.5px] border-[#d0cccc]">
+    <View className="flex max-h-[80px] flex-row justify-between items-center p-4 bg-[#242424] border-b border-[#4A4A4A]">
       <View className="flex-row items-center">
-        {/* <MaterialIcons name="compost" size={40} color="#efefef" /> */}
-        <View className="w-[45px] h-[45px] justify-center ">
+        <View className="w-[40px] h-[40px] justify-center mr-2">
           <Image
             className="w-full h-full"
             resizeMode="contain"
             source={COMPOST_IMAGE}
           />
         </View>
-        <Text className="text-[14px] font-extrabold color-[white] p-2">
-          {headerText}
-        </Text>
+        <Text className="text-lg font-bold text-white">{headerText}</Text>
       </View>
 
-      <View className="flex-1 flex-row items-center gap-2 justify-end">
+      <View className="flex-row items-center space-x-2">
         {user && (
           <TouchableOpacity
             onPress={goToUserNotification}
-            className="flex-row items-center justify-center p-2"
+            className="p-2 rounded-md"
           >
-            <MaterialIcons name="notifications" size={24} color="white" />
+            <Ionicons name="notifications-outline" size={24} color="#9CA3AF" />
           </TouchableOpacity>
         )}
-        <CustomButton
-          title={
-            user?.username
-              ? user.username
-              : admin?.username
-              ? admin.username
-              : "LOGIN"
-          }
-          onPress={
-            !user ? goToUserLog : () => console.log("Punta profile page")
-          }
-          containerStyles="min-w-[65px] min-h-[40px] border-[0.5px] border-[#d0cccc]"
-          textStyles="text-[10px] font-semibold color-[white] p-2"
-        ></CustomButton>
+        <TouchableOpacity
+          onPress={!user && !admin ? goToUserLog : () => console.log("Punta profile page")}
+          className="min-w-[70px] min-h-[40px] border border-[#4A4A4A] rounded-md justify-center items-center"
+        >
+          <Text className="text-sm font-semibold text-white p-2">
+            {user?.username ? user.username : admin?.username ? admin.username : "Log In"}
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );

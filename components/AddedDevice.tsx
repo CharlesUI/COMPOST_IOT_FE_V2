@@ -1,31 +1,28 @@
-import { View, Text, Pressable, FlatList, Alert } from "react-native";
+import { View, Text, Pressable, FlatList, Alert, ActivityIndicator } from "react-native";
 import React from "react";
-import AntDesign from "@expo/vector-icons/AntDesign";
+import { Ionicons } from "@expo/vector-icons"; // Using Ionicons for consistency
 import { useRouter } from "expo-router";
-import { useUser } from "@/context/UserContext"; // Import useUser
-import useClearDevices from "@/hooks/useClearDevices"; // Import the new hook
+import { useUser } from "@/context/UserContext";
+import useClearDevices from "@/hooks/useClearDevices";
 
 const AddedDevice = () => {
   const {
     clearDevices,
     loading: clearingDevices,
     error: clearDevicesError,
-  } = useClearDevices(); // Use the new hook
-  const { updateUser, user } = useUser(); // Get updateUser function
-  const router = useRouter(); // Initialize router
-
-  console.log("user in add device", user);
-  console.log("addedDevices in AddedDevice", user?.devices); // Add this for debugging
+  } = useClearDevices();
+  const { updateUser, user } = useUser();
+  const router = useRouter();
 
   const handleDevicePress = (deviceNumber: string) => {
     updateUser({
-      _id: user?._id,
-      username: user?.username,
-      email: user?.email,
-      devices: user?.devices,
-      selectedDevice: deviceNumber
-    });
-    router.push("/Device"); // Navigate to the Device tab
+        _id: user?._id,
+        username: user?.username,
+        email: user?.email,
+        devices: user?.devices,
+        selectedDevice: deviceNumber
+       });
+    router.push("/Device");
   };
 
   const handleClearAllDevices = () => {
@@ -40,17 +37,16 @@ const AddedDevice = () => {
         {
           text: "Yes, Clear All",
           onPress: async () => {
-            const success = await clearDevices(user?._id); // Clear all devices
+            const success = await clearDevices(user?._id);
             if (success) {
               updateUser({
-                _id: user?._id,
-                username: user?.username,
-                email: user?.email,
-                devices: [],
-                selectedDevice: null
-              });
+                  _id: user?._id,
+                  username: user?.username,
+                  email: user?.email,           
+                  devices: [],            
+                  selectedDevice: null              
+                  });
               Alert.alert("Success", "All devices cleared successfully!");
-              // The UserContext should already be updated by the hook
             } else if (clearDevicesError) {
               Alert.alert("Error", clearDevicesError);
             }
@@ -62,32 +58,31 @@ const AddedDevice = () => {
   };
 
   return (
-    // Added
-    <View className="flex-1 p-6 bg-pink">
-      <View className=" flex-row justify-between items-center mb-4">
-        <Text className="color-gray-200">Recently Added</Text>
+    <View className="flex-1">
+      <View className="flex-row justify-between items-center mb-4">
+        <Text className="text-white font-semibold">Recently Added</Text>
         <Pressable onPress={handleClearAllDevices} disabled={clearingDevices}>
-          <Text className="color-gray-200">
-            {clearingDevices ? "Clearing..." : "Clear All"}
-          </Text>
+          {clearingDevices ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text className="text-gray-400">Clear All</Text>
+          )}
         </Pressable>
       </View>
 
       <FlatList
-        ListHeaderComponent={<View className="mb-2 border-gray-200"></View>}
+        ListHeaderComponent={<View className="mb-2 border-b border-[#4A4A4A] pb-2"></View>}
         showsVerticalScrollIndicator={false}
-        data={user?.devices || []} // Use addedDevices from the context
-        renderItem={({ item }) => {
-          return (
-            <View className="rounded-md mb-2 bg-slate-200 flex-row justify-between items-center p-5">
-              <Text className="text-black">{item}</Text>
-              <Pressable onPress={() => handleDevicePress(item)}>
-                <AntDesign name="right" size={24} color="black" />
-              </Pressable>
-            </View>
-          );
-        }}
-        keyExtractor={(item) => item} // Adjust keyExtractor
+        data={user?.devices || []}
+        renderItem={({ item }) => (
+          <View className="rounded-lg mb-2 bg-[#3A3A3A] flex-row justify-between items-center p-4 border border-[#4A4A4A]">
+            <Text className="text-white">{item}</Text>
+            <Pressable onPress={() => handleDevicePress(item)}>
+              <Ionicons name="chevron-forward-outline" size={24} color="#9CA3AF" />
+            </Pressable>
+          </View>
+        )}
+        keyExtractor={(item) => item}
       />
     </View>
   );

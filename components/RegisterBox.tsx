@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, Pressable, Alert } from "react-native";
-import Feather from "@expo/vector-icons/Feather";
-
-import CustomButton from "./CustomButton";
+import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { RegisterDetails } from "@/app/(modal)/userLog";
 
 interface RegisterData {
@@ -33,94 +31,91 @@ const RegisterBox = ({
     if (error) {
       console.log("Login hook error:", error);
       Alert.alert(
-        "Login Error", // Title of the alert
-        error, // Message to display
+        "Registration Error",
+        error,
         [
           {
             text: "OK",
-            onPress: () => {
-              // Optionally, you can reset the error state here if you want
-              // (though the useLogin hook currently clears it on the next attempt)
-              // setError(null); // This would require passing the setError function down
-            },
+            onPress: () => {},
           },
         ]
       );
-      // Optionally, you might want to reset the error state in the useLogin hook after showing the alert
-      // This would require passing the setError function from useLogin to UserLog
     }
   }, [error]);
 
   return (
-    <View className="w-[90%] bg-slate-200 p-4 m-2 rounded-md">
-      <View className="">
+    <View className="w-[90%] bg-[#3A3A3A] p-6 rounded-xl shadow-md border border-[#4A4A4A]">
+      <Text className="text-white text-xl font-bold mb-4 text-center">Register</Text>
+      <View className="mb-3">
+        <Text className="text-gray-400 mb-1">Username</Text>
         <TextInput
           placeholder="Username"
+          placeholderTextColor="#777"
           value={username}
-          onChangeText={(text) =>
-            setRegisterDetails((prev) => ({ ...prev, username: text }))
-          }
-          className=" border-[0.5px] mb-4 rounded-md p-3"
+          onChangeText={(text) => setRegisterDetails((prev) => ({ ...prev, username: text }))}
+          className="bg-[#2A2A2A] text-white rounded-lg py-3 px-4 border border-[#4A4A4A]"
         />
+      </View>
+      <View className="mb-3">
+        <Text className="text-gray-400 mb-1">Email</Text>
         <TextInput
           placeholder="**********@email.com"
+          placeholderTextColor="#777"
           value={email}
-          onChangeText={(text) =>
-            setRegisterDetails((prev) => ({ ...prev, email: text }))
-          }
-          className=" border-[0.5px] mb-4 rounded-md p-3"
+          onChangeText={(text) => setRegisterDetails((prev) => ({ ...prev, email: text }))}
+          className="bg-[#2A2A2A] text-white rounded-lg py-3 px-4 border border-[#4A4A4A]"
         />
+      </View>
+      <View className="mb-3">
+        <Text className="text-gray-400 mb-1">Password</Text>
         <View className="relative w-full">
           <TextInput
             secureTextEntry={!togglePass}
             placeholder="Password"
+            placeholderTextColor="#777"
             value={password}
-            onChangeText={(text) =>
-              setRegisterDetails((prev) => ({ ...prev, password: text }))
-            }
-            className=" border-[0.5px] mb-4 rounded-md p-3"
+            onChangeText={(text) => setRegisterDetails((prev) => ({ ...prev, password: text }))}
+            className="bg-[#2A2A2A] text-white rounded-lg py-3 px-4 border border-[#4A4A4A]"
           />
-          <View className="absolute right-3 top-3">
-            <Pressable onPress={() => setTogglePass(!togglePass)}>
-              <Feather
-                name={!togglePass ? "eye-off" : "eye"}
-                size={24}
-                color="black"
-              />
-            </Pressable>
-          </View>
+          <TouchableOpacity
+            onPress={() => setTogglePass(!togglePass)}
+            className="absolute right-3 top-3"
+          >
+            <Ionicons name={!togglePass ? "eye-off-outline" : "eye-outline"} size={24} color="#9CA3AF" />
+          </TouchableOpacity>
         </View>
+      </View>
+      <View className="mb-4">
+        <Text className="text-gray-400 mb-1">Confirm Password</Text>
         <View className="relative w-full">
           <TextInput
             secureTextEntry={!toggleConfirmPass}
             placeholder="Confirm Password"
+            placeholderTextColor="#777"
             value={confirmPass}
-            onChangeText={(text) =>
-              setRegisterDetails((prev) => ({ ...prev, confirmPass: text }))
-            }
-            className=" border-[0.5px] mb-4 rounded-md p-3"
+            onChangeText={(text) => setRegisterDetails((prev) => ({ ...prev, confirmPass: text }))}
+            className="bg-[#2A2A2A] text-white rounded-lg py-3 px-4 border border-[#4A4A4A]"
           />
-          <View className="absolute right-3 top-3">
-            <Pressable onPress={() => setToggleConfirmPass(!toggleConfirmPass)}>
-              <Feather
-                name={!toggleConfirmPass ? "eye-off" : "eye"}
-                size={24}
-                color="black"
-              />
-            </Pressable>
-          </View>
+          <TouchableOpacity
+            onPress={() => setToggleConfirmPass(!toggleConfirmPass)}
+            className="absolute right-3 top-3"
+          >
+            <Ionicons name={!toggleConfirmPass ? "eye-off-outline" : "eye-outline"} size={24} color="#9CA3AF" />
+          </TouchableOpacity>
         </View>
-        {/* {error && (
-          <Text className="text-red-500 mb-2">{error}</Text>
-        )} */}
-        <CustomButton
-          containerStyles="min-h-[50px] rounded-md bg-gray-800"
-          textStyles="text-white"
-          title={loading ? "Registering..." : "Register"}
-          onPress={handleRegisterUser}
-          disabled={loading}
-        ></CustomButton>
       </View>
+      <TouchableOpacity
+        onPress={handleRegisterUser}
+        className={`bg-indigo-500 py-3 rounded-lg items-center justify-center ${loading ? 'opacity-70' : ''}`}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="white" />
+        ) : (
+          <Text className="text-white font-semibold text-lg">Register</Text>
+        )}
+      </TouchableOpacity>
+      {error && <Text className="text-red-500 mt-3 text-center">{error}</Text>}
     </View>
   );
 };

@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, ScrollView, Pressable, StatusBar } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import HeaderSection from "@/components/HeaderSection";
 import React, { useState, useEffect } from "react";
@@ -6,6 +6,7 @@ import { useNavigation } from "@react-navigation/native";
 import { API_URL_BASE } from "@/constants/API_URL";
 import { MaterialIcons, Ionicons, FontAwesome5 } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { ActivityIndicator } from "react-native";
 
 const AdminDashboard = () => {
   const navigation = useNavigation();
@@ -17,6 +18,7 @@ const AdminDashboard = () => {
   const [allDevicesPerformanceData, setAllDevicesPerformanceData] = useState<any[] | []>([]);
   const [expandedDevice, setExpandedDevice] = useState(null);
   const [latestAlerts, setLatestAlerts] = useState<any| null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false)
 
 
   const handleNavigation = (tab: any) => {
@@ -76,6 +78,7 @@ const AdminDashboard = () => {
     const fetchDashboardData = async () => {
       try {
         // Fetch user stats
+        setIsLoading(true)
         const totalUsersResponse = await fetch(`${API_URL_BASE}/admin/dashboard/users/count`);
         if (totalUsersResponse.ok) {
           const data = await totalUsersResponse.json();
@@ -135,6 +138,7 @@ const AdminDashboard = () => {
           console.error('Failed to fetch latest alerts');
         }
 
+        setIsLoading(false)
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       }
@@ -145,6 +149,16 @@ const AdminDashboard = () => {
 
   const criticalAlertCount = latestAlerts ? latestAlerts.filter((alert: any) => alert.severity === 'danger').length : 0;
   const totalAlertCount = latestAlerts ? latestAlerts.length : 0;
+
+    if (isLoading) {
+      return (
+        <SafeAreaView className="flex-1 bg-[#242424] items-center justify-center">
+          <StatusBar barStyle="light-content" />
+          <ActivityIndicator size="large" color="#6366F1" />
+          <Text className="text-white mt-4">Loading users...</Text>
+        </SafeAreaView>
+      );
+    }
 
   return (
     <SafeAreaView className="flex-1">
@@ -341,7 +355,7 @@ const AdminDashboard = () => {
                     </View>
                     
                     {/* Action Buttons */}
-                    <View className="flex-row justify-between mt-4">
+                    {/* <View className="flex-row justify-between mt-4">
                       <Pressable className="bg-[#4B4747] py-2 px-4 rounded-md flex-row items-center">
                         <Ionicons name="analytics-outline" size={16} color="white" />
                         <Text className="text-white text-xs ml-2">View History</Text>
@@ -350,7 +364,7 @@ const AdminDashboard = () => {
                         <Ionicons name="settings-outline" size={16} color="white" />
                         <Text className="text-white text-xs ml-2">Configure</Text>
                       </Pressable>
-                    </View>
+                    </View> */}
                   </View>
                 )}
               </Pressable>

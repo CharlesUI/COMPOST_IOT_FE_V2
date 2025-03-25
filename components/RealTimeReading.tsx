@@ -235,7 +235,7 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
   }) => {
     // Color functions based on healthy ranges
     const getTempColor = (temp: number) => {
-      if (temp < 40 || temp > 65) return "#ef4444"; // Red for too cold or too hot
+      if (temp < 40 || temp > 70) return "#ef4444"; // Red for too cold or too hot
       return "#4ade80"; // Green for good range
     };
 
@@ -245,9 +245,9 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
     };
 
     const getMethaneColor = (m: number) => {
-      if (m > 300) return "#ef4444"; // Red for high methane
-      if (m > 100) return "#facc15"; // Yellow for medium methane
-      return "#4ade80"; // Green for low methane
+      if (m > 5000) return "#ef4444"; // Red for high/concerning
+      if (m >= 1000) return "#facc15"; // Yellow for moderate
+      return "#4ade80"; // Green for low/normal
     };
 
     // Calculate percentages for circular indicators
@@ -259,8 +259,15 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
       100,
       Math.max(0, (temperatureOut / 70) * 100)
     );
+
     const moisturePercentage = moisture; // Already a percentage
-    const methanePercentage = Math.min(100, Math.max(0, (methane / 500) * 100));
+    const maxMethanePpmForDisplay = 6000; // Set a max for the circle to represent
+
+    // Calculate the percentage for the CircleProgress based on a reasonable maximum
+    const methanePercentage = Math.min(
+      100,
+      Math.max(0, (methane / maxMethanePpmForDisplay) * 100)
+    );
 
     return (
       <View className="p-2">
@@ -316,15 +323,17 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
             </View>
             <View className="items-center w-1/2 mb-4">
               {/* Added width and margin */}
-              <CircleProgress
-                percentage={methanePercentage}
-                radius={30}
-                strokeWidth={6}
-                color={getMethaneColor(methane)}
-                label="Methane"
-                value={methane}
-                unit="%"
-              />
+              <View className="items-center w-1/2 mb-4">
+                <CircleProgress
+                  percentage={methanePercentage}
+                  radius={30}
+                  strokeWidth={6}
+                  color={getMethaneColor(methane)}
+                  label="Methane"
+                  value={methane}
+                  unit="ppm"
+                />
+              </View>
             </View>
           </View>
         </View>
@@ -446,7 +455,7 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
         <>
           <View className="flex-1 p-4">
             <Text className="color-white mb-4 font-bold text-center text-xl">
-              Compost Storage 1
+              COCO BIN
             </Text>
             <CompostMonitor
               temperatureIn={
@@ -499,7 +508,7 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
           </View>
           <View className="flex-1 p-4">
             <Text className="color-white mb-4 font-bold text-center text-xl">
-              TEG One Power
+              TEG: COCO
             </Text>
             <PowerMonitor
               voltage={realTimeData?.compostContainerOne.tegOne.voltage || 0}
@@ -527,7 +536,7 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
         <>
           <View className="flex-1 p-4">
             <Text className="color-white mb-4 font-bold text-center text-xl">
-              Compost Storage 2
+              MIXED BIN
             </Text>
             <CompostMonitor
               temperatureIn={
@@ -580,7 +589,7 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
           </View>
           <View className="flex-1 p-4">
             <Text className="color-white mb-4 font-bold text-center text-xl">
-              TEG Two Power
+              TEG: MIXED
             </Text>
             <PowerMonitor
               voltage={realTimeData?.compostContainerTwo.tegTwo.voltage || 0}

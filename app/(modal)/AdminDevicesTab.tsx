@@ -5,11 +5,16 @@ import React, {
   useCallback,
   useRef,
 } from "react";
+import { Pressable } from "react-native";
+import { router } from "expo-router";
+import { Feather } from "@expo/vector-icons";
 import { View, Alert, Text, ActivityIndicator, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
+import { TouchableOpacity } from "react-native";
 const { debounce } = require("lodash");
 
+import HeaderSection from "@/components/HeaderSection";
 import CustomButton from "@/components/CustomButton";
 import RealTimeReading from "@/components/RealTimeReading";
 import LineGraphDataVisual from "@/components/LineGraphDataVisual";
@@ -18,13 +23,10 @@ import { getYAxisLabelSuffix, getMaxValue } from "@/hooks/deviceFunctions";
 import { AllSavedDataProp } from "@/hooks/APICallTypes";
 import { API_URL_BASE } from "@/constants/API_URL";
 import ChartSkeleton from "@/components/ChartSkeleton";
-import { Pressable } from "react-native";
-import Feather from "@expo/vector-icons/Feather";
-import { router } from "expo-router";
 
 const AdminDevicesTab = () => {
   const { admin, token } = useAdmin();
-  const deviceIdentifier = admin?.selectedDevice; // Prioritize deviceNumber if both are present\
+  const deviceIdentifier = admin?.selectedDevice;
 
   const [realTimeData, setRealTimeData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,12 +38,24 @@ const AdminDevicesTab = () => {
 
   const [deviceType, setDeviceType] = useState<"energy" | "compost" | "solar">(
     "energy"
-  ); // Initial: Energy
-  const [deviceTime, setDeviceTime] = useState<string>("day"); // Initial: Day
-  const [deviceParameter, setDeviceParameter] = useState<string>("voltage"); // Initial: Voltage
+  );
+  const [deviceTime, setDeviceTime] = useState<string>("day");
+  const [deviceParameter, setDeviceParameter] = useState<string>("voltage");
   const [selectedReading, setSelectedReading] = useState<string>("BATTERY");
   const [isInitialDataLoaded, setIsInitialDataLoaded] = useState(false);
-  const [currentUsers, setCurrentUsers] = useState<string[]>([]);
+  const [currentUsers, setCurrentUsers] = useState<string[]>();
+
+    // Create a memoized reset function
+    const resetDeviceStates = useCallback(() => {
+      setRealTimeData(null);
+      setChartDataCache({});
+      setDeviceType("energy");
+      setDeviceTime("day");
+      setDeviceParameter("voltage");
+      setSelectedReading("BATTERY");
+      setIsInitialDataLoaded(false);
+      setError(null);
+    }, []);
 
   const fetchCurrentUsers = useCallback(async () => {
     if (!deviceIdentifier) {
@@ -51,7 +65,7 @@ const AdminDevicesTab = () => {
     try {
       const tokenForFetch = token;
       const response = await fetch(
-        `${API_URL_BASE}/admin/users/specific/${deviceIdentifier}`, // Replace with the actual API endpoint
+        `${API_URL_BASE}/admin/users/specific/${deviceIdentifier}`,
         {
           headers: { Authorization: `Bearer ${tokenForFetch}` },
         }
@@ -63,15 +77,12 @@ const AdminDevicesTab = () => {
       }
       const responseData = await response.json();
       console.log("Current Users API Response:", responseData);
-      // Assuming the API returns an array of usernames or user objects with a username property
-      setCurrentUsers(responseData.users || []); // Adjust based on the actual response structure
+      setCurrentUsers(responseData.users || []);
     } catch (error: any) {
       console.error("Error fetching current users:", error);
-      // Optionally handle the error (e.g., display a message)
     }
   }, [deviceIdentifier, token, API_URL_BASE, setCurrentUsers]);
 
-  // Function to fetch real-time data
   const fetchRealTimeData = useCallback(async () => {
     if (!deviceIdentifier) {
       console.log("No device identifier provided.");
@@ -80,7 +91,7 @@ const AdminDevicesTab = () => {
     try {
       const tokenForFetch = token;
       const response = await fetch(
-        `${API_URL_BASE}/device/${deviceIdentifier}/real-time`, // Assuming backend can handle deviceNumber or deviceId
+        `${API_URL_BASE}/device/${deviceIdentifier}/real-time`,
         {
           headers: { Authorization: `Bearer ${tokenForFetch}` },
         }
@@ -112,7 +123,6 @@ const AdminDevicesTab = () => {
     API_URL_BASE,
   ]);
 
-  // Refactored fetchChartData to use cache and handle all combinations:
   const fetchChartData = useCallback(
     async (timeFrame: string, dataType: string, parameter: string) => {
       if (!deviceIdentifier) {
@@ -120,10 +130,10 @@ const AdminDevicesTab = () => {
         return null;
       }
 
-      const cacheKey = `${timeFrame}-${dataType}-${parameter}-${deviceIdentifier}`; // Include deviceIdentifier in cache key
+      const cacheKey = `${timeFrame}-${dataType}-${parameter}-${deviceIdentifier}`;
       if (chartDataCache[cacheKey]) {
         console.log(`AdminDevicesTab - CACHE HIT for ${cacheKey}`);
-        return chartDataCache[cacheKey]; // Return cached data if available
+        return chartDataCache[cacheKey];
       }
 
       setIsLoading(true);
@@ -143,7 +153,6 @@ const AdminDevicesTab = () => {
           headers: { Authorization: `Bearer ${tokenForFetch}` },
         });
 
-
         if (!response.ok) {
           const message = `Chart data fetch failed: ${response.status}`;
           throw new Error(message);
@@ -154,11 +163,11 @@ const AdminDevicesTab = () => {
 
         setChartDataCache((prevCache) => ({
           ...prevCache,
-          [cacheKey]: rawData, // Store the data directly from the backend
-        })); // Update cache
+          [cacheKey]: rawData,
+        }));
 
         console.log(`AdminDevicesTab - CACHE UPDATE for ${cacheKey}`);
-        return rawData; // Return processed data for direct use
+        return rawData;
       } catch (error: any) {
         console.error("Error fetching chart data:", error);
         setError(error.message || "Failed to load chart data.");
@@ -166,7 +175,7 @@ const AdminDevicesTab = () => {
           "Chart Data Error",
           error.message || "Failed to load chart data."
         );
-        return null; // Return null in case of error
+        return null;
       } finally {
         setIsLoading(false);
       }
@@ -186,7 +195,6 @@ const AdminDevicesTab = () => {
     setError(null);
     try {
       await fetchRealTimeData();
-      // Fetch initial chart data and cache it (Day, Energy, Voltage)
       await fetchChartData(deviceTime, deviceType, deviceParameter);
     } catch (apiError: any) {
       setError(apiError.message || "Failed to load initial device data.");
@@ -210,16 +218,18 @@ const AdminDevicesTab = () => {
   ]);
 
   useEffect(() => {
+    resetDeviceStates();
+  }, [deviceIdentifier])
+
+  useEffect(() => {
     if (!deviceIdentifier) {
       console.log("Device identifier not available yet");
       return;
     }
-    fetchCurrentUsers(); // Call the new function here
-
+    fetchCurrentUsers();
     fetchInitialData();
-  }, [deviceIdentifier, fetchInitialData]);
+  }, [deviceIdentifier, fetchInitialData, fetchCurrentUsers]);
 
-  // Debounced handlers
   const debouncedSetParameter = useRef(
     debounce(async (parameter: string) => {
       setIsLoading(true);
@@ -260,7 +270,6 @@ const AdminDevicesTab = () => {
     }, 200)
   ).current;
 
-  // Event handlers
   const handleTimeClick = (time: string) => {
     debouncedSetTime(time);
   };
@@ -333,126 +342,122 @@ const AdminDevicesTab = () => {
   console.log("ADMIN IN DEVICE", admin);
 
   return (
-    <SafeAreaView className="flex-1">
-      <View className="flex-row bg-[#2F2C2C] border-b-[0.5px] border-[#d0cccc] justify-between items-center px-4 py-3">
-        <Pressable onPress={() => router.back()} className="p-2">
-          <Feather name="arrow-left" size={24} color="white" />
-        </Pressable>
-        <Text className="text-lg font-bold color-white">
-          Viewer: {admin?.username}
-        </Text>
-        <View className="w-6" />
-      </View>
+    <SafeAreaView className="flex-1 bg-[#121212]">
       <View className="flex-1">
+        <View className="flex-row bg-[#2F2C2C] border-b-[0.5px] border-[#d0cccc] justify-between items-center px-4 py-3">
+          <Pressable onPress={() => router.back()} className="p-2">
+            <Feather name="arrow-left" size={24} color="white" />
+          </Pressable>
+          <Text className="text-lg font-bold color-white">
+            Viewer: {admin?.username}
+          </Text>
+          <View className="w-6" />
+        </View>
+
         {!deviceIdentifier && (
-          <View className="flex-1 justify-center items-center bg-gray-200 ">
-            <View className="w-full h-[350px] flex justify-center items-center">
-              <Text className="color-gray-400 p-4">
+          <View className="flex-1 justify-center items-center bg-[#1E1E1E] px-4">
+            <View className="w-full bg-[#2A2A2A] rounded-2xl p-6 shadow-lg">
+              <Text className="text-gray-400 text-center text-lg mb-4">
                 No device selected. Please go back and select a device.
               </Text>
-              <View className="w-[90%] h-[250px] bg-gray-200 rounded-md">
-                <View className="w-full h-6 bg-gray-300 mb-2 rounded-sm" />
-                <View className="w-full flex-1 flex-row">
-                  <View className="w-[10%] h-full bg-gray-300 rounded-sm" />
-                  <View className="flex-1 flex justify-end">
-                    <View className="w-full h-[40%] bg-gray-300 rounded-sm" />
-                  </View>
-                </View>
-              </View>
+              <View className="w-full h-[200px] bg-[#3A3A3A] rounded-xl animate-pulse" />
             </View>
           </View>
         )}
 
         {deviceIdentifier && (
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            className="flex-1 bg-gray-200"
-          >
-            <View className="w-full flex justify-center items-center bg-[#2F2C2C]">
-              {/* Device Number */}
-              <View className="w-[92.5%] py-3 flex-col border-[#10B04B] border-b-2 gap-2 flex mt-2">
-                <View className="flex flex-row gap-4">
-                  <MaterialIcons name="devices" size={25} color="white" />
-                  <Text className="font-semibold color-white">
+          <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
+            <View className="bg-[#1E1E1E] rounded-b-3xl overflow-hidden">
+              {/* Device Number Section with Elegant Design */}
+              <View className="w-full px-4 py-4 bg-[#2A2A2A] flex-row justify-between items-center">
+                <View className="flex-row items-center space-x-3">
+                  <MaterialIcons name="devices" size={28} color="#10B04B" />
+                  <Text className="text-white text-lg font-semibold">
                     {deviceIdentifier}
                   </Text>
                 </View>
-                {currentUsers.length > 0 && (
-                  <View>
-                    <Text className="text-xs color-white">
-                      Current User:
-                    </Text>
-                    <View className="flex-row flex-wrap">
-                      {currentUsers.map((user, index) => (
-                        <Text key={index} className="font-semibold color-white mr-2">
-                          {user}
-                          {index < currentUsers.length - 1 ? "," : ""}
-                        </Text>
-                      ))}
-                    </View>
-                  </View>
-                )}
-                {currentUsers.length === 0 && (
-                  <Text className="text-xs color-white">
-                    No users currently using.
-                  </Text>
-                )}
               </View>
 
-              {/* Device Data Buttons */}
-              <View className="w-full justify-center items-center mt-4">
-                <View className="w-[72.5%] py-2 flex-row flex justify-between items-center mt-2 gap-2">
-                  <CustomButton
-                    onPress={handleDeviceEnergyClick}
-                    title="TEG"
-                    textStyles="text-[8px] font-bold color-white"
-                    containerStyles={`flex-1 p-2 align-center bg-gray-800 ${
-                      deviceType === "energy"
-                        ? "border-[#10B04B] border-2"
-                        : "border-gray-100 border-[0.5px]"
-                    }`}
-                  />
-                  <CustomButton
-                    onPress={handleSolarEnergyClick}
-                    title="Solar"
-                    textStyles="text-[8px] font-bold color-white"
-                    containerStyles={`flex-1 p-2 align-center bg-gray-800 ${
-                      deviceType === "solar"
-                        ? "border-[#10B04B] border-2"
-                        : "border-gray-100 border-[0.5px]"
-                    }`}
-                  />
-
-                  <CustomButton
-                    onPress={handleDeviceCompostClick}
-                    title="Compost Data"
-                    textStyles="text-[8px] font-bold color-white"
-                    containerStyles={`flex-1 p-2 align-center bg-gray-800 ${
-                      deviceType === "compost"
-                        ? "border-[#10B04B] border-2"
-                        : "border-gray-100 border-[0.5px]"
-                    }`}
-                  />
+              {currentUsers?.length! > 0 && (
+                <View className="px-4 py-2 bg-[#2A2A2A]">
+                  <Text className="text-gray-400 text-xs mb-1">
+                    Current User(s):
+                  </Text>
+                  <View className="flex-row flex-wrap">
+                    {currentUsers?.map((user, index) => (
+                      <Text
+                        key={index}
+                        className="text-white text-xs font-semibold mr-2"
+                      >
+                        {user}
+                        {index < currentUsers.length - 1 ? ", " : ""}
+                      </Text>
+                    ))}
+                  </View>
                 </View>
+              )}
+              {currentUsers?.length === 0 && (
+                <View className="px-4 py-2 bg-[#2A2A2A]">
+                  <Text className="text-gray-400 text-xs">
+                    No users currently using.
+                  </Text>
+                </View>
+              )}
 
-                {/* Time Period Buttons */}
-                <View className="w-[72.5%] pb-3 gap-2 flex-row flex justify-between items-center">
+              {/* Device Type Selection with Improved UI */}
+              <View className="px-4 mt-4">
+                <View className="flex-row gap-2 space-x-3 justify-between">
+                  {[
+                    {
+                      title: "TEG",
+                      type: "energy",
+                      onPress: handleDeviceEnergyClick,
+                    },
+                    {
+                      title: "Solar",
+                      type: "solar",
+                      onPress: handleSolarEnergyClick,
+                    },
+                    {
+                      title: "Compost",
+                      type: "compost",
+                      onPress: handleDeviceCompostClick,
+                    },
+                  ].map((device) => (
+                    <CustomButton
+                      key={device.type}
+                      onPress={device.onPress}
+                      title={device.title}
+                      textStyles={`text-xs font-bold ${
+                        deviceType === device.type
+                          ? "text-white"
+                          : "text-gray-400"
+                      }`}
+                      containerStyles={`flex-1 p-3 rounded-xl ${
+                        deviceType === device.type
+                          ? "bg-[#10B04B]/30 border-2 border-[#10B04B]"
+                          : "bg-[#2A2A2A]"
+                      }`}
+                    />
+                  ))}
+                </View>
+              </View>
+
+              {/* Time Period Selection with Improved Design */}
+              <View className="px-4 mt-4">
+                <View className="flex-row gap-2 space-x-3">
                   {["day", "week", "month"].map((time) => (
                     <CustomButton
                       key={time}
                       onPress={() => handleTimeClick(time)}
-                      title={time.charAt(0).toUpperCase() + time.slice(1)} // Capitalize first letter
-                      textStyles="text-[8px] font-bold color-white"
-                      containerStyles={`flex-1 align-center p-2 bg-gray-800 ${
+                      title={time.charAt(0).toUpperCase() + time.slice(1)}
+                      textStyles={`text-xs font-bold ${
+                        deviceTime === time ? "text-white" : "text-gray-400"
+                      }`}
+                      containerStyles={`flex-1 p-3 rounded-xl ${
                         deviceTime === time
-                          ? "border-[#10B04B] border-2"
-                          : "border-gray-100 border-[0.5px]"
-                      } ${
-                        !(
-                          deviceType === "energy" ||
-                          deviceType === "solar" ||
-                          deviceType === "compost"
-                        ) && "opacity-50 border-green-4 bg-transparent"
+                          ? "bg-[#10B04B]/30 border-2 border-[#10B04B]"
+                          : "bg-[#2A2A2A]"
                       }`}
                       disabled={
                         !(
@@ -466,20 +471,22 @@ const AdminDevicesTab = () => {
                 </View>
               </View>
 
-              {/* Line Chart with Parameter Selection */}
+              {/* Line Chart with Parameter Selection for Energy and Compost*/}
               <View className="w-full flex-col">
                 {!(deviceType === "energy") &&
                   !(deviceType === "compost") &&
                   !(deviceType === "solar") && (
                     <View className="w-full h-[350px] justify-center items-center">
-                      <Text className="font-semibold">Select A Parameter</Text>
+                      <Text className="font-semibold text-white">
+                        Select A Parameter
+                      </Text>
                     </View>
                   )}
 
                 {!isInitialDataLoaded && (
                   <View className="w-full flex-col">
                     <View className="w-full h-[475px] min-h-[475px] rounded-md justify-center items-center">
-                      <Text>Loading data...</Text>
+                      <Text className="text-white">Loading data...</Text>
                       <ActivityIndicator color={"#DE0F3F"} size={"small"} />
                     </View>
                   </View>
@@ -492,69 +499,71 @@ const AdminDevicesTab = () => {
                   isInitialDataLoaded && (
                     <>
                       {isLoading ? (
-                        <ChartSkeleton description={null} />
+                        <ChartSkeleton description={""} />
                       ) : error ? (
                         <Text style={{ color: "red" }}>{error}</Text>
                       ) : (
                         <>
-                          {deviceType === "energy" &&
-                          currentChartData?.tegOne?.length === 0 &&
-                          currentChartData?.tegTwo?.length === 0 ? (
-                            <ChartSkeleton description={"No TEG Data"} />
-                          ) : deviceType === "solar" &&
-                            currentChartData?.solar?.length === 0 ? (
-                            <ChartSkeleton description={"No Solar Data"} />
-                          ) : deviceType === "compost" &&
-                            currentChartData?.compostContainerOne?.length ===
-                              0 &&
-                            currentChartData?.compostContainerTwo?.length ===
-                              0 ? (
-                            <ChartSkeleton description={"No Compost Data"} />
-                          ) : (
-                            <LineGraphDataVisual
-                              deviceTime={deviceTime}
-                              chartData={currentChartData}
-                              isLoading={isLoading}
-                              isDeviceCompostSelected={deviceType === "compost"}
-                              isDeviceEnergySelected={deviceType === "energy"}
-                              isSolarSelected={deviceType === "solar"}
-                              deviceParameter={deviceParameter}
-                              getMaxValue={getMaxValue}
-                              getYAxisLabelSuffix={getYAxisLabelSuffix}
-                              handleParameterChange={handleParameterChange}
-                            />
-                          )}
+                          <LineGraphDataVisual
+                            deviceTime={deviceTime}
+                            chartData={currentChartData}
+                            isLoading={isLoading}
+                            isDeviceCompostSelected={deviceType === "compost"}
+                            isDeviceEnergySelected={deviceType === "energy"}
+                            isSolarSelected={deviceType === "solar"}
+                            deviceParameter={deviceParameter}
+                            getMaxValue={getMaxValue}
+                            getYAxisLabelSuffix={getYAxisLabelSuffix}
+                            handleParameterChange={handleParameterChange}
+                          />
                         </>
                       )}
                     </>
                   )}
               </View>
 
-              {/* Reading for Power*/}
-              <View className="w-full justify-center items-center p-5 border-gray-100 border-t-[0.5px]">
-                <View className="w-full flex-row justify-center items-center pt-2 bg-[#2F2C2C]">
-                  <View className="w-full flex-row justify-between items-center  gap-[1px] bg-[#2F2C2C]">
+              {/* Replace the existing reading buttons section with this */}
+              <View className="w-full justify-center items-center p-5 bg-[#1E1E1E]">
+                <View className="w-full bg-[#2A2A2A] rounded-2xl overflow-hidden">
+                  <View className="flex-row">
                     {["SOLAR", "BATTERY", "COMPOST #1", "COMPOST #2"].map(
                       (itemTitle) => (
-                        <CustomButton
+                        <TouchableOpacity
                           key={itemTitle}
                           onPress={() => selectReading(itemTitle)}
-                          title={itemTitle}
-                          textStyles="text-[7px] font-bold color-white"
-                          containerStyles={`flex-1 py-5 align-center bg-gray-800 ${
+                          className={`flex-1 p-4 items-center justify-center ${
                             selectedReading === itemTitle
-                              ? "border-[#10B04B] border-2"
-                              : ""
+                              ? "bg-[#10B04B]/30 border-b-2 border-[#10B04B]"
+                              : "bg-[#2A2A2A]"
                           }`}
-                        />
+                        >
+                          <Text
+                            className={`text-xs font-bold uppercase ${
+                              selectedReading === itemTitle
+                                ? "text-white"
+                                : "text-gray-400"
+                            }`}
+                          >
+                            {itemTitle === "COMPOST #1"
+                              ? "COCO"
+                              : itemTitle === "COMPOST #2"
+                              ? "MIXED"
+                              : itemTitle}
+                          </Text>
+                        </TouchableOpacity>
                       )
                     )}
                   </View>
+
+                  {/* Subtle divider */}
+                  <View className="h-[1px] w-full bg-[#10B04B]/20" />
+
+                  {/* RealTimeReading component */}
+                  <RealTimeReading
+                    realTimeData={realTimeData}
+                    selectedReading={selectedReading}
+                  />
                 </View>
-                <RealTimeReading
-                  realTimeData={realTimeData}
-                  selectedReading={selectedReading}
-                />
               </View>
             </View>
           </ScrollView>
