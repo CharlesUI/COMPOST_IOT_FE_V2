@@ -18,7 +18,6 @@ import {
   endOfMonth,
 } from "date-fns"; // Import date-fns functions - Keeping these as the logic is still here
 
-import CustomButton from "./CustomButton";
 import PointerLabelComponent from "./PointerLabelComponent";
 
 interface LineGraphProps {
@@ -79,37 +78,26 @@ const LineGraphDataVisual = ({
   );
   console.log("--------------------------------------------------");
 
-  // Console log the length of solar data
-  useEffect(() => {
-    console.log("Solar Data Length:", chartData?.solar?.length);
-  }, [chartData?.solar]);
-
   // Add these state variables before the return statement (around line 41)
   const [visibleStartIndex, setVisibleStartIndex] = useState(0);
   const [visibleEndIndex, setVisibleEndIndex] = useState(50); // Show initial 50 points
 
-  // Add this memoized data preparation before the return statement
+  // Improve the memoization by limiting the dependencies
   const visibleChartData1 = useMemo(() => {
     if (isSolarSelected) {
       return chartData?.solar ?? [];
     } else if (isDeviceEnergySelected) {
-      return chartData?.tegOne ?? []; // Use tegOne for data1 when energy is selected
+      return chartData?.tegOne ?? [];
     } else {
       return chartData?.compostContainerOne ?? [];
     }
-  }, [
-    chartData,
-    isDeviceEnergySelected,
-    isSolarSelected,
-    visibleStartIndex,
-    visibleEndIndex,
-  ]);
+  }, [chartData, isDeviceEnergySelected, isSolarSelected]);
 
   const visibleChartData2 = useMemo(() => {
     return isDeviceEnergySelected
       ? chartData?.tegTwo ?? [] // Use tegTwo for data2 when energy is selected
       : chartData?.compostContainerTwo ?? [];
-  }, [chartData, isDeviceEnergySelected, visibleStartIndex, visibleEndIndex]);
+  }, [chartData, isDeviceEnergySelected]);
 
   // Add this function to handle data windowing during chart scroll
   const handleChartScroll = useCallback(
@@ -292,11 +280,11 @@ const LineGraphDataVisual = ({
       spacing: 50,
       backgroundColor: "#2F2C2C",
       // Optimize animations based on state
-      isAnimated: !isLoading,
+      isAnimated: false,
       animateOnDataChange: false, // Disable for performance
       animationDuration: 500, // Shorter duration for better performance
       scrollAnimation: true,
-      areaChart: true,
+      areaChart: false,
       // curved: true,
       maxValue: adjustedMaxValue,
       xAxisLabelsHeight: 40,
@@ -464,7 +452,7 @@ const LineGraphDataVisual = ({
             )}
 
             {/* Solar Parameter Buttons */}
-            {isSolarSelected && (
+            {/* {isSolarSelected && (
               <View className="w-full justify-center items-center bg-[#1E1E1E] py-4">
                 <View className="w-[90%] gap-3 flex-row justify-between items-center">
                   {["voltage", "current", "wattage"].map((param) => (
@@ -490,7 +478,7 @@ const LineGraphDataVisual = ({
                   ))}
                 </View>
               </View>
-            )}
+            )} */}
           </View>
         )}
       </View>

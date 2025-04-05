@@ -4,6 +4,7 @@ import { MaterialCommunityIcons, Entypo } from "@expo/vector-icons";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useUser } from "@/context/UserContext";
 import { useAdmin } from "@/context/AdminContext";
+import Feather from '@expo/vector-icons/Feather';
 
 const TabsLayout = () => {
   const { user } = useUser();
@@ -55,17 +56,13 @@ const TabsLayout = () => {
       
       {/* Device tab - available for users, disabled for admins and when no one is logged in */}
       <Tabs.Screen
-        name="Device"
+        name="Statistics"
         options={{
-          title: "Device",
+          title: "Statistics",
           tabBarLabel: "Statistics",
           tabBarIcon: ({ color }) => {
             return (
-              <MaterialCommunityIcons
-                name="flower-tulip"
-                size={24}
-                color={color}
-              />
+              <Entypo name="area-graph" size={24} color={color} />
             );
           },
           href: (isAdminLoggedIn || noOneLoggedIn) ? null : undefined,
@@ -80,11 +77,7 @@ const TabsLayout = () => {
           tabBarLabel: "User Manual",
           tabBarIcon: ({ color }) => {
             return (
-              <MaterialCommunityIcons
-                name="flower-tulip"
-                size={24}
-                color={color}
-              />
+              <Entypo name="open-book" size={24} color={color} />
             );
           },
           href: (isAdminLoggedIn || noOneLoggedIn) ? null : undefined,
@@ -99,11 +92,7 @@ const TabsLayout = () => {
           tabBarLabel: "Users",
           tabBarIcon: ({ color }) => {
             return (
-              <MaterialCommunityIcons
-                name="flower-tulip"
-                size={24}
-                color={color}
-              />
+              <Feather name="users" size={24} color={color} />
             );
           },
           href: (isUserLoggedIn || noOneLoggedIn) ? null : undefined,
@@ -118,11 +107,7 @@ const TabsLayout = () => {
           tabBarLabel: "Devices",
           tabBarIcon: ({ color }) => {
             return (
-              <MaterialCommunityIcons
-                name="flower-tulip"
-                size={24}
-                color={color}
-              />
+              <MaterialCommunityIcons name="devices" size={24} color={color} />
             );
           },
           href: (isUserLoggedIn || noOneLoggedIn) ? null : undefined,

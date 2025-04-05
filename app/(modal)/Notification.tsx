@@ -6,7 +6,6 @@ import {
   Animated,
   FlatList,
   PanResponder,
-  Image,
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
@@ -15,13 +14,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import Feather from "@expo/vector-icons/Feather";
 import { router } from "expo-router";
 import { useUser } from "@/context/UserContext";
-import { API_URL_BASE } from "@/constants/API_URL";
 import useNotifications from "@/hooks/useNotifications";
 import { AntDesign } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useToast } from "react-native-toast-notifications";
-import { BlurView } from "expo-blur";
+
 
 // Define the TypeScript interface for the Notification object
 interface NotificationItemType {
@@ -55,8 +52,6 @@ const Notification = () => {
     deleteNotification,
   } = useNotifications();
 
-  const toast = useToast();
-
   useEffect(() => {
     if (user?.devices) {
       updateUser({ ...user, selectedDevice: user.devices[0] });
@@ -89,34 +84,6 @@ const Notification = () => {
     setPreviousNotificationIds(combined.map(n => n._id));
   }, [deviceNotifications, userNotifications]);
 
-  useEffect(() => {
-    // Show toast notifications for new notifications
-    if (allNotifications && previousNotificationIds) {
-      const newNotifications = allNotifications.filter(notif => !previousNotificationIds.includes(notif._id));
-
-      newNotifications.forEach((notif) => {
-        let type = "default";
-        if (notif.level === "good") {
-          type = "success";
-        } else if (notif.level === "warning") {
-          type = "warning";
-        } else if (notif.level === "danger") {
-          type = "danger";
-        } else if (notif.level === "info") {
-          type = "info";
-        }
-        
-        const message = notif.message.includes(": ") ? notif.message.split(": ")[1] : notif.message;
-        
-        toast.show(message, {
-          type: type,
-          placement: "bottom",
-          duration: 3000,
-          animationType: "slide-in",
-        });
-      });
-    }
-  }, [allNotifications, previousNotificationIds, toast]);
 
   const handleRemoveNotification = async (id: string) => {
     await deleteNotification(id);

@@ -109,7 +109,7 @@ const ManageDevices = () => {
       managedUsers: admin?.managedUsers || [],
       selectedDevice: deviceNumber || null,
     });
-    router.push("/(modal)/AdminDevicesTab");
+    router.push("/(modal)/AdminStatistics");
   };
 
   const renderItem = ({ item }: { item: DeviceType }) => (

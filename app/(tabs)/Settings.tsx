@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from "react";
 import {
   View,
   Text,
+  Linking,
   Animated,
   Easing,
   ScrollView,
@@ -18,26 +19,47 @@ import HeaderSection from "@/components/HeaderSection";
 import { useUser } from "@/context/UserContext";
 import { useAdmin } from "@/context/AdminContext";
 
+
+
 const Settings = () => {
-  const { user, logoutUser } = useUser();
+  const { user, logoutUser, abortController } = useUser();
   const { admin, logoutAdmin } = useAdmin();
   const [isLoggingOut, setLoggingOut] = useState<boolean>(false);
-  const slideAnim = useRef(new Animated.Value(0)).current;
   const [adminClickCount, setAdminClickCount] = useState(0);
 
   const scrollViewRef = useRef<ScrollView>(null);
 
-  const handleLogout = () => {
-    setAdminClickCount(0);
-    setLoggingOut(true);
-    setTimeout(() => {
-      logoutUser();
-      logoutAdmin();
-      // Reset scroll to top
+  console.log("USER IN SETTINGS", user);
+
+  const handleLogout = async () => {
+    try {
+      setLoggingOut(true);
+      setAdminClickCount(0);
+      
+      // Cancel any ongoing requests
+      abortController.abort();
+      
+      // Perform logout operations
+      await Promise.all([
+        logoutUser(),
+        logoutAdmin()
+      ]);
+      
+      // Reset scroll position
       scrollViewRef.current?.scrollTo({ y: 0, animated: false });
-    }, 500);
-    setLoggingOut(false);
-    router.push("/(tabs)/Settings");
+      
+      // Navigate to root and clear navigation stack
+      router.replace({
+        pathname: "/",
+        params: { timestamp: Date.now() } // Force refresh
+      });
+      
+    } catch (error) {
+      console.error("Logout error:", error);
+      Alert.alert("Logout Error", "Failed to logout properly");
+    } finally {
+      setLoggingOut(false);
+    }
   };
 
   const openAdminPanel = () => {
@@ -52,7 +74,7 @@ const Settings = () => {
       Alert.alert("Admin Panel", "You are now opening the admin panel");
       setTimeout(() => {
         setAdminClickCount(0);
-        router.push("/adminLog");
+        router.replace("/adminLog");
       }, 500);
     } else if (adminClickCount > 5) {
       setAdminClickCount(0);
@@ -97,7 +119,7 @@ const Settings = () => {
     return (
       <SafeAreaView className="flex-1 bg-[#242424] items-center justify-center">
         <ActivityIndicator size="large" color="#6366F1" />
-        <Text className="text-white mt-4">Loading users...</Text>
+        <Text className="text-white mt-4">Logging out...</Text>
       </SafeAreaView>
     );
   }
@@ -129,7 +151,7 @@ const Settings = () => {
                 </>
               ) : user ? (
                 <>
-                  {renderInfoRow("Role", "User")}
+                  {renderInfoRow("Role", user.title)}
                   {renderInfoRow("Username", user.username)}
                   {renderInfoRow("Email", user.email)}
                 </>
@@ -213,7 +235,15 @@ const Settings = () => {
               <Ionicons name="chevron-forward" size={20} color="#6B7280" />
             </Pressable>
 
-            <Pressable className="flex-row justify-between items-center p-4">
+            <Pressable
+              className="flex-row justify-between items-center p-4"
+              onPress={() => {
+                const facebookURL = "https://www.facebook.com/CharlesDavidVivas/"; // Replace with your actual Facebook URL
+                Linking.openURL(facebookURL).catch((err) =>
+                  console.error("An error occurred: ", err)
+                );
+              }}
+            >
               <View className="flex-row items-center">
                 <Ionicons name="mail-outline" size={20} color="#EF4444" />
                 <Text className="text-white ml-3">Contact Developer</Text>

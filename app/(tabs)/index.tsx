@@ -40,6 +40,7 @@ const HomePage = () => {
   const isPermissionGranted = Boolean(permission?.granted);
   const router = useRouter();
 
+  
   const handleScanQRCode = () => {
     if (!isPermissionGranted) {
       requestPermission();
@@ -75,7 +76,7 @@ const HomePage = () => {
         selectedDevice: text,
       });
       setDeviceText("");
-      router.push("/Device");
+      // router.replace("/Statistics");
     } else if (addDeviceError) {
       Alert.alert("Error", addDeviceError);
       setDeviceText("");
@@ -84,11 +85,10 @@ const HomePage = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-[#242424]">
-      <StatusBar barStyle="light-content" />
       <HeaderSection headerText="CompostSense" title="Home" />
       <View className="flex-1 p-4">
         <Text className="text-lg font-semibold text-white mb-4">
-          Compost Statistics Server
+          Compost Statistics
         </Text>
 
         {/* Information Box */}

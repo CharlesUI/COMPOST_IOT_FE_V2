@@ -4,16 +4,12 @@ import {
   Text,
   Pressable,
   Animated,
-  ActivityIndicator,
   Alert,
-  StatusBar,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons"; // Using Ionicons for consistency
 import { router } from "expo-router";
 
-import HeaderSection from "@/components/HeaderSection";
 import AdminLogInBox from "@/components/AdminLogInBox";
 import useAdminLogin from "@/hooks/useAdminLogin";
 import { useAdmin } from "@/context/AdminContext";
@@ -53,7 +49,7 @@ const AdminLog = () => {
 
     if (success) {
       setLogInDetails({ username: "", password: "" });
-      router.push("/(tabs)/AdminDashboard");
+      router.replace("/(tabs)/AdminDashboard");
     } else {
       setLocalLoginError(loginError || "Login failed. Please try again.");
     }
@@ -69,7 +65,7 @@ const AdminLog = () => {
     <SafeAreaView className="flex-1 relative bg-[#242424]">
       <View className="w-full flex-row p-5 justify-between items-center border-gray-200 border-b-[1px] mb-5">
       <Text className="text-white text-xl font-bold text-center">Admin Login</Text>
-        <Pressable onPress={() => router.push("/")} className="">
+        <Pressable onPress={() => router.replace("/")} className="">
           <Feather name="x" size={24} color="white" />
         </Pressable>
       </View>

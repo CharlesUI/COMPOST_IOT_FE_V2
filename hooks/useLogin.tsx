@@ -23,6 +23,7 @@ const useLogin = () => {
       });
 
       const data = await response.json();
+      console.log("data", data)
 
       if (response.ok) {
         updateToken(data.token);
@@ -30,8 +31,9 @@ const useLogin = () => {
           _id: data._id,
           username: data.username,
           email: data.email,
+          title: data.title,
           devices: data.devices,
-          selectedDevice: null
+          selectedDevice: null,
         });
         return true; // Indicate successful login
       } else {

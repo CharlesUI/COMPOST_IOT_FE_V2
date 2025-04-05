@@ -6,6 +6,7 @@ import { RegisterDetails } from "@/app/(modal)/userLog";
 interface RegisterData {
   email: string;
   username: string;
+  title: string;
   password: string;
   confirmPass: string;
   setRegisterDetails: React.Dispatch<React.SetStateAction<RegisterDetails>>;
@@ -17,6 +18,7 @@ interface RegisterData {
 const RegisterBox = ({
   email,
   username,
+  title,
   password,
   confirmPass,
   setRegisterDetails,
@@ -63,6 +65,16 @@ const RegisterBox = ({
           placeholderTextColor="#777"
           value={email}
           onChangeText={(text) => setRegisterDetails((prev) => ({ ...prev, email: text }))}
+          className="bg-[#2A2A2A] text-white rounded-lg py-3 px-4 border border-[#4A4A4A]"
+        />
+      </View>
+      <View className="mb-3">
+        <Text className="text-gray-400 mb-1">Role</Text>
+        <TextInput
+          placeholder="role"
+          placeholderTextColor="#777"
+          value={"Device Manager"}
+          onChangeText={(text) => setRegisterDetails((prev) => ({ ...prev, title: "Device Manager" }))}
           className="bg-[#2A2A2A] text-white rounded-lg py-3 px-4 border border-[#4A4A4A]"
         />
       </View>

@@ -9,7 +9,7 @@ const useRegister = () => {
   const [success, setSuccess] = useState<boolean>(false); // New state for registration success
   const { updateUser, updateToken } = useUser();
 
-  const register = async (username: string, email: string, password: string) => {
+  const register = async (username: string, email: string, title: string, password: string) => {
     setLoading(true);
     setError(null);
     setSuccess(false); // Reset success state on new attempt
@@ -20,7 +20,7 @@ const useRegister = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username, email, title, password }),
       });
 
       const data = await response.json();
@@ -31,6 +31,7 @@ const useRegister = () => {
           _id: data._id,
           username: data.username,
           email: data.email,
+          title: data.title,
         });
         setSuccess(true); // Set success to true
         return true; // Indicate successful registration

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   SafeAreaView,
   Text,
@@ -9,7 +9,7 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
-  StatusBar
+  StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import HeaderSection from "@/components/HeaderSection";
@@ -19,9 +19,15 @@ import { API_URL_BASE } from "@/constants/API_URL";
 import { useToast } from "react-native-toast-notifications";
 import { User } from "@/context/UserContext";
 
+// Enum for user roles
+enum UserRole {
+  USER = "Device Manager",
+}
+
 const ManageUsers = () => {
   const [users, setUsers] = useState<User[] | null>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const { admin } = useAdmin();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -29,59 +35,79 @@ const ManageUsers = () => {
   const [editMode, setEditMode] = useState(false);
   const [editedUsername, setEditedUsername] = useState<string | undefined>("");
   const [editedEmail, setEditedEmail] = useState<string | undefined>("");
-  const [notificationMessage, setNotificationMessage] = useState<string | undefined>("");
+  const [editedRole, setEditedRole] = useState<UserRole | undefined>(
+    UserRole.USER
+  );
+  const [notificationMessage, setNotificationMessage] = useState<
+    string | undefined
+  >("");
   const toast = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredUsers, setFilteredUsers] = useState<User[] | null>([]);
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(`${API_URL_BASE}/admin/users`);
-        if (!response.ok) {
-          throw new Error(
-            `Failed to fetch users: ${response.status} - ${response.statusText}`
-          );
-        }
-        const data = await response.json();
-        if (data.success) {
-          setUsers(data.users);
-          setFilteredUsers(data.users);
-        } else {
-          setError(data.message || "Failed to fetch users");
-        }
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+  // Fetch users function
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`${API_URL_BASE}/admin/users`);
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch users: ${response.status} - ${response.statusText}`
+        );
       }
-    };
+      const data = await response.json();
+      if (data.success) {
+        setUsers(data.users);
+        setFilteredUsers(data.users);
+      } else {
+        setError(data.message || "Failed to fetch users");
+      }
+    } catch (err: any) {
+      setError(err.message);
+      toast.show(err.message, { type: "danger" });
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
+  // Initial fetch and admin check
+  useEffect(() => {
     if (admin) {
       fetchUsers();
     } else {
       router.replace("/adminLog");
     }
-  }, [admin, router]);
+  }, [admin, router, fetchUsers]);
 
+  // Search filtering
   useEffect(() => {
     if (users) {
       const filtered = users.filter(
-        user => 
+        (user) =>
           user.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+          user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.title?.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setFilteredUsers(filtered);
     }
   }, [searchQuery, users]);
 
-  const openUserDetails = (user: any) => {
+  // Refresh handler
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchUsers();
+  }, [fetchUsers]);
+
+  // Open user details modal
+  const openUserDetails = (user: User) => {
     setSelectedUser(user);
     setIsModalVisible(true);
+    setEditedRole(user.title as UserRole);
   };
 
+  // Close user details modal
   const closeUserDetails = () => {
     setIsModalVisible(false);
     setEditMode(false);
@@ -90,14 +116,17 @@ const ManageUsers = () => {
     setNotificationMessage("");
   };
 
+  // Enter edit mode
   const handleEditUser = () => {
     setEditMode(true);
-    if(selectedUser) {
+    if (selectedUser) {
       setEditedUsername(selectedUser?.username);
       setEditedEmail(selectedUser?.email);
+      setEditedRole(selectedUser?.title as UserRole);
     }
   };
 
+  // Save user changes
   const handleSaveUser = async () => {
     if (!selectedUser) return;
     setLoading(true);
@@ -112,6 +141,7 @@ const ManageUsers = () => {
           body: JSON.stringify({
             username: editedUsername,
             email: editedEmail,
+            role: editedRole,
           }),
         }
       );
@@ -124,10 +154,22 @@ const ManageUsers = () => {
         // Update the users list locally
         setUsers((prevUsers: any) =>
           prevUsers.map((user: any) =>
-            user._id === selectedUser._id ? { ...user, username: editedUsername, email: editedEmail } : user
+            user._id === selectedUser._id
+              ? {
+                  ...user,
+                  username: editedUsername,
+                  email: editedEmail,
+                  role: editedRole,
+                }
+              : user
           )
         );
-        setSelectedUser({ ...selectedUser, username: editedUsername, email: editedEmail });
+        setSelectedUser({
+          ...selectedUser,
+          username: editedUsername,
+          email: editedEmail,
+          title: editedRole,
+        });
         setEditMode(false);
         toast.show("User updated successfully", { type: "success" });
       } else {
@@ -140,88 +182,8 @@ const ManageUsers = () => {
     }
   };
 
-  const handleSendNotification = async () => {
-    if (!selectedUser || !notificationMessage) return;
-    setLoading(true);
-    try {
-      const response = await fetch(
-        `${API_URL_BASE}/admin/users/${selectedUser._id}/notify`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            message: notificationMessage,
-          }),
-        }
-      );
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData?.message || "Failed to send notification");
-      }
-      const data = await response.json();
-      if (data.success) {
-        toast.show("Notification sent successfully", { type: "success" });
-        setNotificationMessage("");
-      } else {
-        toast.show(data.message || "Failed to send notification", { type: "danger" });
-      }
-    } catch (err: any) {
-      toast.show(err.message || "Failed to send notification", { type: "danger" });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeleteUser = () => {
-    if (!selectedUser) return;
-    Alert.alert(
-      "Delete User",
-      `Are you sure you want to delete user: ${selectedUser.username}? This action cannot be undone.`,
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            setLoading(true);
-            try {
-              const response = await fetch(
-                `${API_URL_BASE}/admin/users/${selectedUser._id}`,
-                {
-                  method: "DELETE",
-                }
-              );
-              if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData?.message || "Failed to delete user");
-              }
-              const data = await response.json();
-              if (data.success) {
-                setUsers((prevUsers: any) =>
-                  prevUsers.filter((user: any) => user._id !== selectedUser._id)
-                );
-                closeUserDetails();
-                toast.show("User deleted successfully", { type: "success" });
-              } else {
-                toast.show(data.message || "Failed to delete user", { type: "danger" });
-              }
-            } catch (err: any) {
-              toast.show(err.message || "Failed to delete user", { type: "danger" });
-            } finally {
-              setLoading(false);
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const renderItem = ({ item }: any) => (
+  // Render user list item
+  const renderItem = ({ item }: { item: User }) => (
     <TouchableOpacity
       onPress={() => openUserDetails(item)}
       className="bg-[#3A3A3A] p-5 my-2 mx-4 rounded-xl shadow-md border border-[#4A4A4A]"
@@ -231,18 +193,35 @@ const ManageUsers = () => {
         <View>
           <Text className="text-lg font-bold text-white">{item.username}</Text>
           <Text className="text-gray-400">{item.email}</Text>
-          {item.devices && item.devices.length > 0 && (
-            <View className="flex-row items-center mt-1">
-              <Ionicons name="phone-portrait-outline" size={14} color="#9CA3AF" />
-              <Text className="text-gray-400 ml-1 text-xs">{item.devices.length} device{item.devices.length !== 1 ? 's' : ''}</Text>
-            </View>
-          )}
+          <View className="flex-row items-center">
+            <Text
+              className={`text-xs ${
+                item.title === UserRole.USER ? "text-red-400" : "text-gray-400"
+              } mr-2`}
+            >
+              {item.title?.toUpperCase()}
+            </Text>
+            {item.devices && item.devices.length > 0 && (
+              <View className="flex-row items-center">
+                <Ionicons
+                  name="phone-portrait-outline"
+                  size={14}
+                  color="#9CA3AF"
+                />
+                <Text className="text-gray-400 ml-1 text-xs">
+                  {item.devices.length} device
+                  {item.devices.length !== 1 ? "s" : ""}
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
         <Ionicons name="chevron-forward" size={24} color="#9CA3AF" />
       </View>
     </TouchableOpacity>
   );
 
+  // Loading state
   if (loading && !users?.length) {
     return (
       <SafeAreaView className="flex-1 bg-[#242424] items-center justify-center">
@@ -253,6 +232,7 @@ const ManageUsers = () => {
     );
   }
 
+  // Error state
   if (error) {
     return (
       <SafeAreaView className="flex-1 bg-[#242424] items-center justify-center">
@@ -261,7 +241,7 @@ const ManageUsers = () => {
         <Ionicons name="alert-circle" size={48} color="#EF4444" />
         <Text className="text-red-500 mt-2">Error loading users</Text>
         <Text className="text-gray-400 text-center mx-6 mt-2">{error}</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           className="bg-[#3A3A3A] px-6 py-3 rounded-lg mt-6"
           onPress={() => router.replace("/AdminDashboard")}
         >
@@ -282,7 +262,7 @@ const ManageUsers = () => {
           <Ionicons name="search" size={20} color="#9CA3AF" />
           <TextInput
             className="flex-1 text-white ml-2"
-            placeholder="Search users..."
+            placeholder="Search users by name, email, or role..."
             placeholderTextColor="#9CA3AF"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -298,7 +278,8 @@ const ManageUsers = () => {
       {/* User Count */}
       <View className="px-4 mb-2">
         <Text className="text-gray-400">
-          {filteredUsers?.length || 0} user{filteredUsers?.length !== 1 ? 's' : ''} found
+          {filteredUsers?.length || 0} user
+          {filteredUsers?.length !== 1 ? "s" : ""} found
         </Text>
       </View>
 
@@ -314,7 +295,7 @@ const ManageUsers = () => {
               {searchQuery ? "No users match your search." : "No users found."}
             </Text>
             {searchQuery && (
-              <TouchableOpacity 
+              <TouchableOpacity
                 className="mt-4 bg-[#3A3A3A] px-6 py-2 rounded-lg"
                 onPress={() => setSearchQuery("")}
               >
@@ -323,13 +304,8 @@ const ManageUsers = () => {
             )}
           </View>
         )}
-        refreshing={loading}
-        onRefresh={() => {
-          // Implement refresh logic here
-          setLoading(true);
-          // Fetch users again
-          // ...
-        }}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
       />
 
       {/* User Details Modal */}
@@ -343,13 +319,13 @@ const ManageUsers = () => {
           <View className="bg-[#2A2A2A] rounded-t-3xl p-6">
             <View className="items-center mb-4">
               <View className="w-16 h-1 bg-gray-500 rounded-full mb-4" />
-              
+
               <View className="w-16 h-16 bg-[#3A3A3A] rounded-full items-center justify-center mb-2">
                 <Text className="text-white text-3xl font-bold">
                   {selectedUser?.username?.charAt(0).toUpperCase()}
                 </Text>
               </View>
-              
+
               <Text className="text-xl font-bold text-white">
                 {!editMode ? selectedUser?.username : "Edit User"}
               </Text>
@@ -358,15 +334,45 @@ const ManageUsers = () => {
             {!editMode ? (
               <View className="mb-6">
                 <View className="flex-row items-center mb-3">
-                  <Ionicons name="mail-outline" size={22} color="#9CA3AF" className="mr-3" />
+                  <Ionicons
+                    name="mail-outline"
+                    size={22}
+                    color="#9CA3AF"
+                    className="mr-3"
+                  />
                   <Text className="text-white ml-2">{selectedUser?.email}</Text>
                 </View>
-                
+
+                <View className="flex-row items-center mb-3">
+                  <Ionicons
+                    name="person-outline"
+                    size={22}
+                    color="#9CA3AF"
+                    className="mr-3"
+                  />
+                  <Text
+                    className={`text-base ${
+                      selectedUser?.title === UserRole.USER
+                        ? "text-green-400"
+                        : "text-white"
+                    }`}
+                  >
+                    {selectedUser?.title?.toUpperCase()}
+                  </Text>
+                </View>
+
                 <View className="flex-row items-center">
-                  <Ionicons name="phone-portrait-outline" size={22} color="#9CA3AF" className="mr-3" />
+                  <Ionicons
+                    name="phone-portrait-outline"
+                    size={22}
+                    color="#9CA3AF"
+                    className="mr-3"
+                  />
                   <Text className="text-white ml-2">
-                    {selectedUser?.devices && selectedUser.devices.length > 0 
-                      ? `${selectedUser.devices.length} device${selectedUser.devices.length !== 1 ? 's' : ''} connected` 
+                    {selectedUser?.devices && selectedUser.devices.length > 0
+                      ? `${selectedUser.devices.length} device${
+                          selectedUser.devices.length !== 1 ? "s" : ""
+                        } connected`
                       : "No devices"}
                   </Text>
                 </View>
@@ -383,8 +389,8 @@ const ManageUsers = () => {
                     onChangeText={setEditedUsername}
                   />
                 </View>
-                
-                <View>
+
+                <View className="mb-4">
                   <Text className="text-gray-400 mb-1">Email</Text>
                   <TextInput
                     className="bg-[#3A3A3A] text-white px-4 py-3 rounded-lg border border-[#4A4A4A]"
@@ -395,6 +401,29 @@ const ManageUsers = () => {
                     keyboardType="email-address"
                     autoCapitalize="none"
                   />
+                </View>
+
+                <View>
+                  <Text className="text-gray-400 mb-1">User Role</Text>
+                  <View className="flex-row justify-between">
+                    {Object.values(UserRole).map((role) => (
+                      <TouchableOpacity
+                        key={role}
+                        className={`flex-1 p-3 mx-1 rounded-lg ${
+                          editedRole === role
+                            ? role === UserRole.USER
+                              ? "bg-red-600"
+                              : "bg-green-600"
+                            : "bg-[#3A3A3A]"
+                        }`}
+                        onPress={() => setEditedRole(role)}
+                      >
+                        <Text className="text-white text-center">
+                          {role.toUpperCase()}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
                 </View>
               </View>
             )}
@@ -412,12 +441,48 @@ const ManageUsers = () => {
                   numberOfLines={3}
                   textAlignVertical="top"
                 />
-                <TouchableOpacity 
-                  onPress={handleSendNotification} 
-                  className={`${!notificationMessage ? 'bg-indigo-500/50' : 'bg-indigo-500'} p-3 rounded-lg`}
+                <TouchableOpacity
+                  onPress={async () => {
+                    if (!selectedUser || !notificationMessage) return;
+                    try {
+                      const response = await fetch(
+                        `${API_URL_BASE}/admin/users/${selectedUser._id}/notify`,
+                        {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({
+                            message: notificationMessage,
+                          }),
+                        }
+                      );
+                      const data = await response.json();
+                      if (data.success) {
+                        toast.show("Notification sent successfully", {
+                          type: "success",
+                        });
+                        setNotificationMessage("");
+                      } else {
+                        toast.show(
+                          data.message || "Failed to send notification",
+                          { type: "danger" }
+                        );
+                      }
+                    } catch (err: any) {
+                      toast.show(err.message || "Failed to send notification", {
+                        type: "danger",
+                      });
+                    }
+                  }}
+                  className={`${
+                    !notificationMessage ? "bg-indigo-500/50" : "bg-indigo-500"
+                  } p-3 rounded-lg`}
                   disabled={!notificationMessage}
                 >
-                  <Text className="text-white font-semibold text-center">Send Notification</Text>
+                  <Text className="text-white font-semibold text-center">
+                    Send Notification
+                  </Text>
                 </TouchableOpacity>
               </View>
             ) : null}
@@ -425,42 +490,101 @@ const ManageUsers = () => {
             <View className="flex-row justify-between mb-4">
               {editMode ? (
                 <>
-                  <TouchableOpacity 
-                    onPress={() => setEditMode(false)} 
+                  <TouchableOpacity
+                    onPress={() => setEditMode(false)}
                     className="bg-gray-600 p-3 rounded-lg flex-1 mr-2"
                   >
-                    <Text className="text-white font-semibold text-center">Cancel</Text>
+                    <Text className="text-white font-semibold text-center">
+                      Cancel
+                    </Text>
                   </TouchableOpacity>
-                  <TouchableOpacity 
-                    onPress={handleSaveUser} 
+                  <TouchableOpacity
+                    onPress={handleSaveUser}
                     className="bg-green-600 p-3 rounded-lg flex-1 ml-2"
                   >
-                    <Text className="text-white font-semibold text-center">Save Changes</Text>
+                    <Text className="text-white font-semibold text-center">
+                      Save Changes
+                    </Text>
                   </TouchableOpacity>
                 </>
               ) : (
                 <>
-                  <TouchableOpacity 
-                    onPress={handleEditUser} 
+                  <TouchableOpacity
+                    onPress={handleEditUser}
                     className="bg-blue-600 p-3 rounded-lg flex-1 mr-2"
                   >
-                    <Text className="text-white font-semibold text-center">Edit User</Text>
+                    <Text className="text-white font-semibold text-center">
+                      Edit User
+                    </Text>
                   </TouchableOpacity>
-                  <TouchableOpacity 
-                    onPress={handleDeleteUser} 
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (!selectedUser) return;
+                      Alert.alert(
+                        "Delete User",
+                        `Are you sure you want to delete user: ${selectedUser.username}? This action cannot be undone.`,
+                        [
+                          {
+                            text: "Cancel",
+                            style: "cancel",
+                          },
+                          {
+                            text: "Delete",
+                            style: "destructive",
+                            onPress: async () => {
+                              try {
+                                const response = await fetch(
+                                  `${API_URL_BASE}/admin/users/${selectedUser._id}`,
+                                  {
+                                    method: "DELETE",
+                                  }
+                                );
+                                const data = await response.json();
+                                if (data.success) {
+                                  setUsers((prevUsers: any) =>
+                                    prevUsers.filter(
+                                      (user: any) =>
+                                        user._id !== selectedUser._id
+                                    )
+                                  );
+                                  closeUserDetails();
+                                  toast.show("User deleted successfully", {
+                                    type: "success",
+                                  });
+                                } else {
+                                  toast.show(
+                                    data.message || "Failed to delete user",
+                                    { type: "danger" }
+                                  );
+                                }
+                              } catch (err: any) {
+                                toast.show(
+                                  err.message || "Failed to delete user",
+                                  { type: "danger" }
+                                );
+                              }
+                            },
+                          },
+                        ]
+                      );
+                    }}
                     className="bg-red-600 p-3 rounded-lg flex-1 ml-2"
                   >
-                    <Text className="text-white font-semibold text-center">Delete User</Text>
+                    <Text className="text-white font-semibold text-center">
+                      Delete User
+                    </Text>
                   </TouchableOpacity>
                 </>
               )}
             </View>
 
-            <TouchableOpacity 
-              onPress={closeUserDetails} 
+            <TouchableOpacity
+              onPress={closeUserDetails}
               className="bg-gray-700 p-4 rounded-lg"
             >
-              <Text className="text-white font-semibold text-center">Close</Text>
+              <Text className="text-white font-semibold text-center">
+                Close
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

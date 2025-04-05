@@ -34,7 +34,6 @@ const inner = rrect(
   50
 );
 
-const validDeviceIds = ["CMPST10923", "CMPST18276", "CMPST19284"];
 
 export default function Home() {
   const { user, logoutUser, updateUser } = useUser(); // Access updateUser
@@ -64,6 +63,7 @@ export default function Home() {
         _id: user?._id,
         username: user?.username,
         email: user?.email,
+        title: user?.title,
         devices: [...(user?.devices || []), text],
         selectedDevice: text
       });
@@ -102,16 +102,16 @@ export default function Home() {
         return; // Important: Return to prevent further execution
       }
       
-      if (!validDeviceIds.includes(data)) {
-        router.back();
+      if (!data?.startsWith("CMPST")) {
+        router.replace("/");
         Alert.alert("Error", "Invalid QR Code.");
-        updateUser({
-          _id: user?._id,
-          username: user?.username,
-          email: user?.email,
-          devices: [...(user?.devices || [])],
-          selectedDevice: data
-        });
+        // updateUser({
+        //   _id: user?._id,
+        //   username: user?.username,
+        //   email: user?.email,
+        //   devices: [...(user?.devices || [])],
+        //   selectedDevice: data
+        // });
         setHasScanned(false); // Allow scanning again
         qrLock.current = false;
         return; // Important: Return to prevent further execution
@@ -125,7 +125,7 @@ export default function Home() {
             handleAddDevice(data);
             setHasScanned(false); // Allow scanning again
             qrLock.current = false;
-            router.back();
+            router.replace("/");
           },
         },
       ]);
@@ -156,7 +156,7 @@ export default function Home() {
             <View style={styles.footer}>
               <TouchableOpacity
                 style={styles.exitButton}
-                onPress={() => router.back()}
+                onPress={() => router.replace("/")}
               >
                 <Ionicons name="close" size={32} color="white" />
               </TouchableOpacity>

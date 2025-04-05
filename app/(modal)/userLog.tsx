@@ -20,6 +20,7 @@ import useLogin from "@/hooks/useLogin";
 import useRegister from "@/hooks/useRegister";
 import { useUser } from "@/context/UserContext";
 import { Feather } from "@expo/vector-icons";
+import { API_URL_BASE } from "@/constants/API_URL";
 
 export interface LogInDetails {
   email: string;
@@ -29,6 +30,7 @@ export interface LogInDetails {
 export interface RegisterDetails {
   email: string;
   username: string;
+  title: "Device Manager";
   password: string;
   confirmPass: string;
 }
@@ -87,6 +89,7 @@ const UserLog = () => {
   const [registerDetails, setRegisterDetails] = useState<RegisterDetails>({
     email: "",
     username: "",
+    title: "Device Manager",
     password: "",
     confirmPass: "",
   });
@@ -97,6 +100,7 @@ const UserLog = () => {
     if (
       registerDetails.email.trim() === "" ||
       registerDetails.username.trim() === "" ||
+      registerDetails.title.trim() === "" ||
       registerDetails.password.trim() === "" ||
       registerDetails.confirmPass.trim() === ""
     ) {
@@ -112,7 +116,8 @@ const UserLog = () => {
     const success = await register(
       registerDetails.username.trim(),
       registerDetails.email.trim(),
-      registerDetails.password.trim()
+      registerDetails.title.trim(),
+      registerDetails.password.trim(),
     );
 
     if (success) {
@@ -124,10 +129,11 @@ const UserLog = () => {
       setRegisterDetails({
         email: "",
         username: "",
+        title: "Device Manager",
         password: "",
         confirmPass: "",
       });
-      router.push("/(tabs)");
+      router.replace("/(tabs)");
     } else {
       setLocalRegisterError(
         registerError || "Registration failed. Please try again."
@@ -146,6 +152,7 @@ const UserLog = () => {
     setRegisterDetails({
       email: "",
       username: "",
+      title: "Device Manager",
       password: "",
       confirmPass: "",
     });
@@ -199,6 +206,7 @@ const UserLog = () => {
           <RegisterBox
             email={registerDetails.email}
             username={registerDetails.username}
+            title={registerDetails.title}
             password={registerDetails.password}
             confirmPass={registerDetails.confirmPass}
             setRegisterDetails={setRegisterDetails}

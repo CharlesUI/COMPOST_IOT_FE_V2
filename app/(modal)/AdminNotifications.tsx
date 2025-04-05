@@ -7,7 +7,6 @@ import {
   FlatList,
   Animated,
   PanResponder,
-  Image,
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
@@ -19,7 +18,6 @@ import { API_URL_BASE } from "@/constants/API_URL";
 import { AntDesign } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MaterialIcons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
 
 // Define the TypeScript interface for the Notification object
 interface NotificationItemType {

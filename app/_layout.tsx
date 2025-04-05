@@ -3,7 +3,7 @@ import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { UserProvider } from "@/context/UserContext";
 import { AdminProvider } from "@/context/AdminContext";
-import { Toast, ToastProvider } from "react-native-toast-notifications";
+import "react-native-gesture-handler"
 
 import "../global.css";
 
@@ -11,7 +11,6 @@ const RootLayout = () => {
   return (
     <SafeAreaProvider>
       <AdminProvider>
-        <ToastProvider>
           <UserProvider>
             <Stack>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -24,11 +23,35 @@ const RootLayout = () => {
                 options={{ headerShown: false, presentation: "modal" }}
               />
               <Stack.Screen
-                name="(modal)/AdminDevicesTab"
+                name="(modal)/AdminNotifications"
                 options={{ headerShown: false, presentation: "modal" }}
               />
               <Stack.Screen
-                name="(modal)/AdminNotifications"
+                name="(modal)/AdminStatistics"
+                options={{ headerShown: false, presentation: "modal" }}
+              />
+              <Stack.Screen
+                name="(modal)/AdminSolar"
+                options={{ headerShown: false, presentation: "modal" }}
+              />
+              <Stack.Screen
+                name="(modal)/AdminCocoStats"
+                options={{ headerShown: false, presentation: "modal" }}
+              />
+              <Stack.Screen
+                name="(modal)/AdminMixedStats"
+                options={{ headerShown: false, presentation: "modal" }}
+              />
+              <Stack.Screen
+                name="(modal)/CocoStats"
+                options={{ headerShown: false, presentation: "modal" }}
+              />
+              <Stack.Screen
+                name="(modal)/MixedStats"
+                options={{ headerShown: false, presentation: "modal" }}
+              />
+              <Stack.Screen
+                name="(modal)/SolarStats"
                 options={{ headerShown: false, presentation: "modal" }}
               />
               <Stack.Screen
@@ -42,7 +65,6 @@ const RootLayout = () => {
               />
             </Stack>
           </UserProvider>
-        </ToastProvider>
       </AdminProvider>
     </SafeAreaProvider>
   );
