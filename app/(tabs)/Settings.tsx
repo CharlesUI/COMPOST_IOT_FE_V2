@@ -19,8 +19,6 @@ import HeaderSection from "@/components/HeaderSection";
 import { useUser } from "@/context/UserContext";
 import { useAdmin } from "@/context/AdminContext";
 
-
-
 const Settings = () => {
   const { user, logoutUser, abortController } = useUser();
   const { admin, logoutAdmin } = useAdmin();
@@ -30,30 +28,30 @@ const Settings = () => {
   const scrollViewRef = useRef<ScrollView>(null);
 
   console.log("USER IN SETTINGS", user);
+  console.log("ADMIN IN SETTINGS", admin);
+  console.log("LOGGING OUT", isLoggingOut);
 
   const handleLogout = async () => {
     try {
       setLoggingOut(true);
       setAdminClickCount(0);
-      
+
       // Cancel any ongoing requests
       abortController.abort();
-      
+
       // Perform logout operations
-      await Promise.all([
-        logoutUser(),
-        logoutAdmin()
-      ]);
-      
+      // In your handleLogout function in Settings.js
+      await Promise.all([logoutUser(), logoutAdmin()]);
+
       // Reset scroll position
       scrollViewRef.current?.scrollTo({ y: 0, animated: false });
-      
-      // Navigate to root and clear navigation stack
-      router.replace({
-        pathname: "/",
-        params: { timestamp: Date.now() } // Force refresh
-      });
-      
+
+      setTimeout(() => {
+        router.replace({
+          pathname: "/",
+          params: { timestamp: Date.now() }, // Force refresh
+        });
+      }, 0); // Try with 0ms first, then maybe a slightly larger value like 50ms if needed
     } catch (error) {
       console.error("Logout error:", error);
       Alert.alert("Logout Error", "Failed to logout properly");
@@ -74,6 +72,7 @@ const Settings = () => {
       Alert.alert("Admin Panel", "You are now opening the admin panel");
       setTimeout(() => {
         setAdminClickCount(0);
+        console.log("Admin panel opened");
         router.replace("/adminLog");
       }, 500);
     } else if (adminClickCount > 5) {
@@ -238,7 +237,8 @@ const Settings = () => {
             <Pressable
               className="flex-row justify-between items-center p-4"
               onPress={() => {
-                const facebookURL = "https://www.facebook.com/CharlesDavidVivas/"; // Replace with your actual Facebook URL
+                const facebookURL =
+                  "https://www.facebook.com/CharlesDavidVivas/"; // Replace with your actual Facebook URL
                 Linking.openURL(facebookURL).catch((err) =>
                   console.error("An error occurred: ", err)
                 );

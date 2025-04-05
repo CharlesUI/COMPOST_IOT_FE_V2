@@ -415,70 +415,7 @@ const LineGraphDataVisual = ({
                 )}
               </Animated.View>
             </View>
-            {/* Energy and Compost Parameter Buttons */}
-            {(isDeviceEnergySelected || isDeviceCompostSelected) && (
-              <View className="w-full justify-center items-center bg-[#1E1E1E] py-4">
-                <View className="w-[90%] gap-3 flex-row justify-between items-center">
-                  {(isDeviceEnergySelected
-                    ? ["voltage", "current", "wattage"]
-                    : ["methane", "moisture", "temperatureIn", "temperatureOut"]
-                  ).map((param) => (
-                    <TouchableOpacity
-                      key={param}
-                      onPress={() => handleParameterChange(param)}
-                      className={`flex-1 p-3 rounded-xl items-center justify-center ${
-                        deviceParameter === param
-                          ? "bg-[#10B04B]/30 border-2 border-[#10B04B]"
-                          : "bg-[#2A2A2A]"
-                      }`}
-                    >
-                      <Text
-                        className={`text-[7px] font-bold uppercase ${
-                          deviceParameter === param
-                            ? "text-white"
-                            : "text-gray-400"
-                        }`}
-                      >
-                        {param === "temperatureIn"
-                          ? "Temp In"
-                          : param === "temperatureOut"
-                          ? "Temp Out"
-                          : param.charAt(0).toUpperCase() + param.slice(1)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            )}
-
-            {/* Solar Parameter Buttons */}
-            {/* {isSolarSelected && (
-              <View className="w-full justify-center items-center bg-[#1E1E1E] py-4">
-                <View className="w-[90%] gap-3 flex-row justify-between items-center">
-                  {["voltage", "current", "wattage"].map((param) => (
-                    <TouchableOpacity
-                      key={param}
-                      onPress={() => handleParameterChange(param)}
-                      className={`flex-1 p-3 rounded-xl items-center justify-center ${
-                        deviceParameter === param
-                          ? "bg-[#EEC643]/30 border-2 border-[#EEC643]"
-                          : "bg-[#2A2A2A]"
-                      }`}
-                    >
-                      <Text
-                        className={`text-[7px] font-bold uppercase ${
-                          deviceParameter === param
-                            ? "text-white"
-                            : "text-gray-400"
-                        }`}
-                      >
-                        {param.charAt(0).toUpperCase() + param.slice(1)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            )} */}
+            
           </View>
         )}
       </View>

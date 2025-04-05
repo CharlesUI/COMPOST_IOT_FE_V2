@@ -74,7 +74,7 @@ const UserLog = () => {
 
     if (success) {
       setLogInDetails({ email: "", password: "" });
-      router.push("/(tabs)");
+      router.replace("/(tabs)");
     } else {
       setLocalLoginError(loginError || "Login failed. Please try again.");
     }
