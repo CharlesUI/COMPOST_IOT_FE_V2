@@ -16,7 +16,6 @@ import HeaderSection from "@/components/HeaderSection";
 import { useAdmin } from "@/context/AdminContext";
 import { router } from "expo-router";
 import { API_URL_BASE } from "@/constants/API_URL";
-import { useToast } from "react-native-toast-notifications";
 import { User } from "@/context/UserContext";
 
 // Enum for user roles
@@ -41,7 +40,6 @@ const ManageUsers = () => {
   const [notificationMessage, setNotificationMessage] = useState<
     string | undefined
   >("");
-  const toast = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredUsers, setFilteredUsers] = useState<User[] | null>([]);
 
@@ -65,7 +63,7 @@ const ManageUsers = () => {
       }
     } catch (err: any) {
       setError(err.message);
-      toast.show(err.message, { type: "danger" });
+      Alert.alert("Error", err.message);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -171,12 +169,12 @@ const ManageUsers = () => {
           title: editedRole,
         });
         setEditMode(false);
-        toast.show("User updated successfully", { type: "success" });
+        Alert.alert("Success", "User updated successfully");
       } else {
-        toast.show(data.message || "Failed to update user", { type: "danger" });
+        Alert.alert("Error", data.message || "Failed to update user");
       }
     } catch (err: any) {
-      toast.show(err.message || "Failed to update user", { type: "danger" });
+      Alert.alert("Error", err.message || "Failed to update user");
     } finally {
       setLoading(false);
     }
@@ -459,20 +457,19 @@ const ManageUsers = () => {
                       );
                       const data = await response.json();
                       if (data.success) {
-                        toast.show("Notification sent successfully", {
-                          type: "success",
-                        });
+                        Alert.alert("Success", "Notification sent successfully");
                         setNotificationMessage("");
                       } else {
-                        toast.show(
-                          data.message || "Failed to send notification",
-                          { type: "danger" }
+                        Alert.alert(
+                          "Error",
+                          data.message || "Failed to send notification"
                         );
                       }
                     } catch (err: any) {
-                      toast.show(err.message || "Failed to send notification", {
-                        type: "danger",
-                      });
+                      Alert.alert(
+                        "Error",
+                        err.message || "Failed to send notification"
+                      );
                     }
                   }}
                   className={`${
@@ -548,19 +545,17 @@ const ManageUsers = () => {
                                     )
                                   );
                                   closeUserDetails();
-                                  toast.show("User deleted successfully", {
-                                    type: "success",
-                                  });
+                                  Alert.alert("Success", "User deleted successfully");
                                 } else {
-                                  toast.show(
-                                    data.message || "Failed to delete user",
-                                    { type: "danger" }
+                                  Alert.alert(
+                                    "Error",
+                                    data.message || "Failed to delete user"
                                   );
                                 }
                               } catch (err: any) {
-                                toast.show(
-                                  err.message || "Failed to delete user",
-                                  { type: "danger" }
+                                Alert.alert(
+                                  "Error",
+                                  err.message || "Failed to delete user"
                                 );
                               }
                             },

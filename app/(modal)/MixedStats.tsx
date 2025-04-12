@@ -13,24 +13,40 @@ import { MaterialIcons, FontAwesome5, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 
-import HeaderSection from "@/components/HeaderSection";
-import LineGraphDataVisual from "@/components/LineGraphDataVisual";
+// Assuming these components and hooks exist and function as expected
+import LineGraphDataVisual from "@/components/LineGraphDataVisual"; // Ensure this accepts the new props
 import { useUser } from "@/context/UserContext";
 import { getYAxisLabelSuffix, getMaxValue } from "@/hooks/deviceFunctions";
-import { AllSavedDataProp } from "@/hooks/APICallTypes";
+// We use any[] for chartData state now, so AllSavedDataProp isn't directly used for it
 import { API_URL_BASE } from "@/constants/API_URL";
 
 const { width } = Dimensions.get("window");
+
+// Define a type for the summary state for better type safety
+type SummaryValues = {
+    average: string;
+    peak: string;
+};
+type SummaryState = {
+    methane?: SummaryValues;
+    moisture?: SummaryValues;
+    temperatureIn?: SummaryValues;
+    temperatureOut?: SummaryValues;
+    voltage?: SummaryValues;
+    current?: SummaryValues;
+    wattage?: SummaryValues;
+};
 
 const MixedStats = () => {
   const { user, token, abortController } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [chartData, setChartData] = useState<AllSavedDataProp | null>(null);
+  const [chartData, setChartData] = useState<any[]>([]); // State holds simple array
   const [deviceTime, setDeviceTime] = useState<string>("day");
-  const [deviceParameter, setDeviceParameter] = useState<string>("methane");
+  const [deviceParameter, setDeviceParameter] = useState<string>("methane"); // Default compost
   const [selectedDataType, setSelectedDataType] = useState<"compost" | "teg">("compost");
-  const [refreshing, setRefreshing] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [summary, setSummary] = useState<SummaryState>({}); // Summary State
 
   const iconMapping: any = {
     methane: "wind",
@@ -42,6 +58,76 @@ const MixedStats = () => {
     wattage: "plug",
   };
 
+  // Helper to get the correct suffix for summary calculation
+  const getSummarySuffix = (param: string, dataType: "compost" | "teg"): string => {
+    if (dataType === "compost") {
+      switch (param) {
+        case "methane": return " ppm";
+        case "moisture": return "%";
+        case "temperatureIn":
+        case "temperatureOut": return "°C";
+        default: return "";
+      }
+    } else { // TEG
+      switch (param) {
+        case "voltage": return "V";
+        case "current": return "A";
+        case "wattage": return "W";
+        default: return "";
+      }
+    }
+  };
+
+  // Helper function to reset summary for a specific parameter
+  const resetSummary = (parameter: string, dataType: "compost" | "teg") => {
+      const suffix = getSummarySuffix(parameter, dataType);
+      setSummary(prev => ({
+          ...prev,
+          [parameter]: { average: `0${suffix}`, peak: `0${suffix}` }
+      }));
+  };
+
+
+  // Calculate summary statistics from the data
+  const calculateSummary = (data: any[], parameter: string, dataType: "compost" | "teg") => {
+    if (!data || data.length === 0) {
+        resetSummary(parameter, dataType);
+        return;
+    }
+
+    try {
+      // Extract values, filtering out any null/undefined/NaN
+      const values = data
+        .map(item => parseFloat(item.value)) // Assuming data format { timestamp: ..., value: ... }
+        .filter(val => !isNaN(val));
+
+      if (values.length === 0) {
+        resetSummary(parameter, dataType);
+        return;
+      }
+
+      // Calculate average and peak
+      const sum = values.reduce((acc, val) => acc + val, 0);
+      const avg = sum / values.length;
+      const peak = Math.max(...values);
+
+      // Format with appropriate units
+      const suffix = getSummarySuffix(parameter, dataType);
+
+      setSummary(prev => ({
+        ...prev,
+        [parameter]: {
+            average: `${avg.toFixed(1)}${suffix}`,
+            peak: `${peak.toFixed(1)}${suffix}`
+        }
+      }));
+    } catch (err) {
+      console.error("Error calculating summary:", err);
+      resetSummary(parameter, dataType); // Reset on error
+    }
+  };
+
+
   const fetchChartData = useCallback(
     async (timeFrame: string, parameter: string, dataType: "compost" | "teg") => {
       if (!user?.selectedDevice) return;
@@ -51,12 +137,12 @@ const MixedStats = () => {
         const tokenForFetch = token;
         const queryString = new URLSearchParams({
           timeFrame,
-          dataType: dataType === "teg" ? "energy" : "compost",
+          dataType: dataType === "teg" ? "energy" : "compost", // API expects 'energy' for TEG
           parameter,
         }).toString();
         const apiUrl = `${API_URL_BASE}/device/${user?.selectedDevice}/saved-time-frame?${queryString}`;
 
-        console.log("API URL:", apiUrl);
+        console.log("API URL in MIXED:", apiUrl);
         const response = await fetch(apiUrl, {
           headers: { Authorization: `Bearer ${tokenForFetch}` },
           signal: abortController.signal,
@@ -66,27 +152,58 @@ const MixedStats = () => {
           throw new Error(message);
         }
         const responseData = await response.json();
-        setChartData(responseData.data);
+
+        // --- MODIFIED DATA HANDLING ---
+        // --- Now using compostContainerTwo and tegTwo ---
+        let dataArray: any[] = [];
+        if (dataType === "compost" && responseData.data?.compostContainerTwo) { // Use Two
+            dataArray = responseData.data.compostContainerTwo;
+            console.log("Fetched Compost Container TWO data:", dataArray.length); // Log Two
+        } else if (dataType === "teg" && responseData.data?.tegTwo) { // Use Two
+            dataArray = responseData.data.tegTwo;
+            console.log("Fetched TEG TWO data:", dataArray.length); // Log Two
+        } else {
+            console.warn(`Data key (${dataType === "compost" ? 'compostContainerTwo' : 'tegTwo'}) not found in response:`, responseData.data); // Warn Two
+            dataArray = [];
+        }
+
+        if (Array.isArray(dataArray)) {
+            setChartData(dataArray); // Set the specific array to state
+            calculateSummary(dataArray, parameter, dataType); // Calculate summary
+        } else {
+            console.error(`${dataType} data received is not an array:`, dataArray);
+            setChartData([]); // Set empty array if not valid
+            resetSummary(parameter, dataType); // Reset summary
+        }
+        // --- END MODIFIED DATA HANDLING ---
+
       } catch (err: any) {
         console.error(`Error fetching ${dataType} chart data:`, err);
         setError(err.message || `Failed to load ${dataType} chart data.`);
+        setChartData([]); // Clear data on error
+        resetSummary(parameter, dataType); // Reset summary on error
       } finally {
         setIsLoading(false);
-        setRefreshing(false);
+        setIsRefreshing(false);
       }
     },
     [user?.selectedDevice, token, API_URL_BASE, abortController]
   );
 
+  // Effect to fetch data when time, parameter, or data type changes
   useEffect(() => {
-    const dataTypeForFetch = selectedDataType;
-    let initialParameter = "methane";
-    if (dataTypeForFetch === "teg") {
-      initialParameter = "voltage";
-    }
-    setDeviceParameter(initialParameter);
-    fetchChartData(deviceTime, initialParameter, dataTypeForFetch);
-  }, [fetchChartData, deviceTime, selectedDataType]);
+    fetchChartData(deviceTime, deviceParameter, selectedDataType);
+  }, [fetchChartData, deviceTime, deviceParameter, selectedDataType]);
+
+
+   // Effect to handle switching default parameter when data type changes
+   useEffect(() => {
+       const newParameter = selectedDataType === 'teg' ? 'voltage' : 'methane';
+       setDeviceParameter(newParameter);
+       // Fetching will be triggered by the previous useEffect because deviceParameter changes
+       resetSummary(newParameter, selectedDataType);
+   }, [selectedDataType]);
+
 
   const handleTimeChange = (time: string) => {
     setDeviceTime(time);
@@ -101,9 +218,13 @@ const MixedStats = () => {
   };
 
   const onRefresh = useCallback(() => {
-    setRefreshing(true);
+    setIsRefreshing(true);
     fetchChartData(deviceTime, deviceParameter, selectedDataType);
   }, [deviceTime, deviceParameter, selectedDataType, fetchChartData]);
+
+  // Get current summary values or fallback
+  const currentAvg = summary[deviceParameter as keyof SummaryState]?.average || 'N/A';
+  const currentPeak = summary[deviceParameter as keyof SummaryState]?.peak || 'N/A';
 
   return (
     <SafeAreaView className="flex-1 bg-[#121212]">
@@ -116,24 +237,30 @@ const MixedStats = () => {
         showsVerticalScrollIndicator={false}
         className="flex-1 px-4 pt-2 pb-8"
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={"#10B04B"} />
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor={selectedDataType === 'compost' ? "#10B04B" : "#FFD700"} // Dynamic tint color
+          />
         }
       >
         <View className="bg-[#1E1E1E] rounded-3xl overflow-hidden shadow-lg mb-6">
-          {/* Header with close button */}
+          {/* Header */}
           <LinearGradient
             colors={['#2A2A2A', '#232323']}
             className="p-4 flex-row justify-between items-center border-b border-[#333]"
           >
             <View className="flex-row items-center">
-              <View className="bg-[#10B04B]/20 w-10 h-10 rounded-full items-center justify-center mr-3">
-                <FontAwesome5 name="recycle" size={18} color="#10B04B" />
-              </View>
+               <View className={`w-10 h-10 rounded-full items-center justify-center mr-3 ${selectedDataType === 'compost' ? 'bg-[#10B04B]/20' : 'bg-[#FFD700]/20'}`}>
+                 <FontAwesome5
+                    name={selectedDataType === 'compost' ? "leaf" : "bolt"} // Use leaf for compost, bolt for TEG
+                    size={18}
+                    color={selectedDataType === 'compost' ? "#10B04B" : "#FFD700"} />
+               </View>
               <Text className="text-white text-lg font-semibold">
-                Mixed Data
+                {selectedDataType === 'compost' ? 'Compost Data (C2)' : 'TEG Data (T2)'} {/* Indicate C2/T2 */}
               </Text>
             </View>
-
             <TouchableOpacity
               onPress={() => router.back()}
               className="bg-[#333] w-8 h-8 rounded-full items-center justify-center"
@@ -146,51 +273,51 @@ const MixedStats = () => {
           <View className="p-4">
             {/* Data Type Selection Buttons */}
             <View className="flex-row justify-around mb-6">
-              <TouchableOpacity
-                onPress={() => handleDataTypeChange("compost")}
-                className={`flex-1 py-3 mx-2 rounded-xl items-center justify-center flex-row ${
-                  selectedDataType === "compost"
-                    ? "bg-[#10B04B]/20 border border-[#10B04B]"
-                    : "bg-[#2A2A2A]"
-                }`}
-              >
-                <FontAwesome5
-                  name="leaf"
-                  size={14}
-                  color={selectedDataType === "compost" ? "#10B04B" : "#666"}
-                  style={{ marginRight: 6 }}
-                />
-                <Text
-                  className={`text-xs font-bold uppercase ${
-                    selectedDataType === "compost" ? "text-white" : "text-gray-400"
+                <TouchableOpacity
+                  onPress={() => handleDataTypeChange("compost")}
+                  className={`flex-1 py-3 mx-2 rounded-xl items-center justify-center flex-row ${
+                    selectedDataType === "compost"
+                      ? "bg-[#10B04B]/20 border border-[#10B04B]"
+                      : "bg-[#2A2A2A]"
                   }`}
                 >
-                  Compost
-                </Text>
-              </TouchableOpacity>
+                  <FontAwesome5
+                    name="leaf"
+                    size={14}
+                    color={selectedDataType === "compost" ? "#10B04B" : "#666"}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text
+                    className={`text-xs font-bold uppercase ${
+                      selectedDataType === "compost" ? "text-white" : "text-gray-400"
+                    }`}
+                  >
+                    Compost (C2) {/* Indicate C2 */}
+                  </Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={() => handleDataTypeChange("teg")}
-                className={`flex-1 py-3 mx-2 rounded-xl items-center justify-center flex-row ${
-                  selectedDataType === "teg"
-                    ? "bg-[#10B04B]/20 border border-[#10B04B]"
-                    : "bg-[#2A2A2A]"
-                }`}
-              >
-                <FontAwesome5
-                  name="bolt"
-                  size={14}
-                  color={selectedDataType === "teg" ? "#10B04B" : "#666"}
-                  style={{ marginRight: 6 }}
-                />
-                <Text
-                  className={`text-xs font-bold uppercase ${
-                    selectedDataType === "teg" ? "text-white" : "text-gray-400"
+                <TouchableOpacity
+                  onPress={() => handleDataTypeChange("teg")}
+                   className={`flex-1 py-3 mx-2 rounded-xl items-center justify-center flex-row ${
+                    selectedDataType === "teg"
+                      ? "bg-[#FFD700]/20 border border-[#FFD700]" // Use TEG color scheme
+                      : "bg-[#2A2A2A]"
                   }`}
                 >
-                  TEG
-                </Text>
-              </TouchableOpacity>
+                  <FontAwesome5
+                    name="bolt"
+                    size={14}
+                    color={selectedDataType === "teg" ? "#FFD700" : "#666"} // Use TEG color scheme
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text
+                    className={`text-xs font-bold uppercase ${
+                      selectedDataType === "teg" ? "text-white" : "text-gray-400"
+                    }`}
+                  >
+                    TEG (T2) {/* Indicate T2 */}
+                  </Text>
+                </TouchableOpacity>
             </View>
 
             {/* Time Period Selection */}
@@ -201,9 +328,12 @@ const MixedStats = () => {
                   <TouchableOpacity
                     key={time}
                     onPress={() => handleTimeChange(time)}
+                    // Use dynamic border/bg color based on selectedDataType for consistency
                     className={`flex-1 py-3 mx-1 rounded-xl items-center justify-center ${
                       deviceTime === time
-                        ? "bg-[#10B04B]/20 border border-[#10B04B]"
+                        ? selectedDataType === 'compost'
+                            ? "bg-[#10B04B]/20 border border-[#10B04B]"
+                            : "bg-[#FFD700]/20 border border-[#FFD700]"
                         : "bg-[#2A2A2A]"
                     }`}
                   >
@@ -219,59 +349,48 @@ const MixedStats = () => {
               </View>
             </View>
 
-            {/* Chart Area */}
-            <View className="bg-[#2F2C2C] rounded-xl overflow-hidden shadow-lg mb-4">
-              {isLoading && !refreshing ? (
+            {/* Chart Area - Simplified Logic */}
+            <View className="bg-[#2F2C2C] rounded-xl overflow-hidden shadow-lg mb-4 min-h-[350px]">
+              {isLoading && !isRefreshing ? (
                 <View className="h-[350px] justify-center items-center">
-                  <ActivityIndicator color={"#10B04B"} size={"large"} />
+                  <ActivityIndicator color={selectedDataType === 'compost' ? "#10B04B" : "#FFD700"} size={"large"} />
                   <Text className="text-gray-400 mt-4">Loading data...</Text>
                 </View>
               ) : error ? (
-                <View className="h-[350px] justify-center items-center">
+                <View className="h-[350px] justify-center items-center p-4">
                   <Ionicons name="alert-circle-outline" size={40} color="#EF4444" />
-                  <Text className="text-red-500 mt-2">{error}</Text>
+                  <Text className="text-red-500 mt-2 text-center">{error}</Text>
                   <TouchableOpacity
                     onPress={() => fetchChartData(deviceTime, deviceParameter, selectedDataType)}
-                    className="mt-4 bg-[#10B04B]/20 px-6 py-2 rounded-full"
+                    className={`mt-4 px-6 py-2 rounded-full ${selectedDataType === 'compost' ? 'bg-[#10B04B]/20' : 'bg-[#FFD700]/20'}`}
                   >
-                    <Text className="text-[#10B04B]">Retry</Text>
+                    <Text className={`${selectedDataType === 'compost' ? 'text-[#10B04B]' : 'text-[#FFD700]'}`}>Retry</Text>
                   </TouchableOpacity>
                 </View>
-              ) : selectedDataType === "compost" && chartData?.compostContainerTwo?.length! > 0 ? (
+              ) : chartData.length > 0 ? ( // Check simplified chartData array
                 <LineGraphDataVisual
                   deviceTime={deviceTime}
-                  chartData={chartData}
+                  chartData={chartData} // Pass the array directly
                   isLoading={isLoading}
-                  isSolarSelected={false}
-                  isDeviceCompostSelected={true}
-                  isDeviceEnergySelected={false}
+                  deviceType={selectedDataType === "teg" ? "energy" : "compost"} // Pass 'compost' or 'teg'
                   deviceParameter={deviceParameter}
                   getMaxValue={getMaxValue}
                   getYAxisLabelSuffix={getYAxisLabelSuffix}
-                  handleParameterChange={handleParameterChange}
-                />
-              ) : selectedDataType === "teg" && chartData?.tegTwo?.length! > 0 ? (
-                <LineGraphDataVisual
-                  deviceTime={deviceTime}
-                  chartData={chartData}
-                  isLoading={isLoading}
-                  isSolarSelected={false}
-                  isDeviceCompostSelected={false}
-                  isDeviceEnergySelected={true}
-                  deviceParameter={deviceParameter}
-                  getMaxValue={getMaxValue}
-                  getYAxisLabelSuffix={getYAxisLabelSuffix}
-                  handleParameterChange={handleParameterChange}
+                  handleParameterChange={handleParameterChange} // Pass if needed
+                  title={selectedDataType === 'compost' ? 'Compost Trends (C2)' : 'TEG Output (T2)'} // Dynamic Title
                 />
               ) : (
-                <View className="h-[350px] justify-center items-center">
+                <View className="h-[350px] justify-center items-center p-4">
                   <Ionicons name="bar-chart-outline" size={40} color="#666" />
                   <Text className="text-gray-400 mt-2">No Data Available</Text>
+                   <Text className="text-gray-500 text-xs mt-1 max-w-[250px] text-center">
+                     Try changing the time period or parameter, or pull down to refresh.
+                   </Text>
                   <TouchableOpacity
                     onPress={() => fetchChartData(deviceTime, deviceParameter, selectedDataType)}
-                    className="mt-4 bg-[#10B04B]/20 px-6 py-2 rounded-full"
+                     className={`mt-4 px-6 py-2 rounded-full ${selectedDataType === 'compost' ? 'bg-[#10B04B]/20' : 'bg-[#FFD700]/20'}`}
                   >
-                    <Text className="text-[#10B04B]">Refresh</Text>
+                     <Text className={`${selectedDataType === 'compost' ? 'text-[#10B04B]' : 'text-[#FFD700]'}`}>Refresh</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -289,7 +408,7 @@ const MixedStats = () => {
                           onPress={() => handleParameterChange(param)}
                           className={`w-[49%] py-3 px-2 mb-2 rounded-xl flex-row items-center justify-center ${
                             deviceParameter === param
-                              ? "bg-[#EEC643]/20 border border-[#EEC643]"
+                              ? "bg-[#EEC643]/20 border border-[#EEC643]" // Parameter highlight color
                               : "bg-[#2A2A2A]"
                           }`}
                         >
@@ -305,9 +424,9 @@ const MixedStats = () => {
                             }`}
                           >
                             {param === "temperatureIn"
-                              ? "Temperature In"
+                              ? "Temp In" // Shorter label
                               : param === "temperatureOut"
-                              ? "Temperature Out"
+                              ? "Temp Out" // Shorter label
                               : param.charAt(0).toUpperCase() + param.slice(1)}
                           </Text>
                         </TouchableOpacity>
@@ -317,9 +436,9 @@ const MixedStats = () => {
                       <TouchableOpacity
                         key={param}
                         onPress={() => handleParameterChange(param)}
-                        className={`w-[32%] py-3 px-2 mb-2 rounded-xl flex-row items-center justify-center ${
+                        className={`w-[32%] py-3 px-1 mb-2 rounded-xl flex-row items-center justify-center ${
                           deviceParameter === param
-                            ? "bg-[#EEC643]/20 border border-[#EEC643]"
+                            ? "bg-[#EEC643]/20 border border-[#EEC643]" // Parameter highlight color
                             : "bg-[#2A2A2A]"
                         }`}
                       >
@@ -341,40 +460,31 @@ const MixedStats = () => {
               </View>
             </View>
 
-            {/* Additional data summary section */}
+            {/* Additional data summary section - Using Summary State */}
             <View className="bg-[#2A2A2A] rounded-xl p-4 mt-2">
-              <Text className="text-white text-sm font-medium mb-3">Summary</Text>
+              <Text className="text-white text-sm font-medium mb-3">Summary ({deviceParameter.charAt(0).toUpperCase() + deviceParameter.slice(1)})</Text>
 
               <View className="flex-row justify-between mb-2">
                 <View className="bg-[#333] rounded-lg p-3 w-[48%]">
                   <Text className="text-gray-400 text-xs">Average</Text>
                   <Text className="text-white text-lg font-bold">
-                    {deviceParameter === "methane" ? "32 ppm" :
-                     deviceParameter === "moisture" ? "64%" :
-                     deviceParameter === "temperatureIn" ? "28°C" :
-                     deviceParameter === "temperatureOut" ? "22°C" :
-                     deviceParameter === "voltage" ? "12.4V" :
-                     deviceParameter === "current" ? "0.8A" : "9.6W"}
+                    {currentAvg}
                   </Text>
                 </View>
 
                 <View className="bg-[#333] rounded-lg p-3 w-[48%]">
                   <Text className="text-gray-400 text-xs">Peak</Text>
                   <Text className="text-white text-lg font-bold">
-                    {deviceParameter === "methane" ? "45 ppm" :
-                     deviceParameter === "moisture" ? "78%" :
-                     deviceParameter === "temperatureIn" ? "32°C" :
-                     deviceParameter === "temperatureOut" ? "26°C" :
-                     deviceParameter === "voltage" ? "14.2V" :
-                     deviceParameter === "current" ? "1.2A" : "12.8W"}
+                     {currentPeak}
                   </Text>
                 </View>
               </View>
 
               <TouchableOpacity
-                className="bg-[#10B04B]/20 py-3 rounded-xl items-center justify-center mt-2"
+                className={`py-3 rounded-xl items-center justify-center mt-2 ${selectedDataType === 'compost' ? 'bg-[#10B04B]/20' : 'bg-[#FFD700]/20'}`}
+                 // Add export functionality if needed
               >
-                <Text className="text-[#10B04B] font-medium">Export Data</Text>
+                 <Text className={`font-medium ${selectedDataType === 'compost' ? 'text-[#10B04B]' : 'text-[#FFD700]'}`}>Export Data</Text>
               </TouchableOpacity>
             </View>
           </View>

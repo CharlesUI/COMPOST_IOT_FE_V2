@@ -26,11 +26,11 @@ const AdminDashboard = () => {
   const handleNavigation = (tab: any) => {
     console.log(`Maps to ${tab}`);
     if (tab === "Users") {
-      router.replace("/(tabs)/ManageUsers");
+      router.push("/(tabs)/ManageUsers");
     } else if (tab === "Devices" || tab === "AllDevices") {
-      router.replace("/(tabs)/ManageDevices");
+      router.push("/(tabs)/ManageDevices");
     } else if (tab === "Notifications") {
-      router.replace("/(modal)/AdminNotifications");
+      router.push("/(modal)/AdminNotifications");
     }
   };
 

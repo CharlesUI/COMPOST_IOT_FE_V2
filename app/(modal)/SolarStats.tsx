@@ -26,10 +26,14 @@ const SolarStats = () => {
   const { user, token, abortController } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [chartData, setChartData] = useState<AllSavedDataProp | null>(null);
+  const [chartData, setChartData] = useState<any[]>([]);
   const [deviceTime, setDeviceTime] = useState<string>("day");
   const [deviceParameter, setDeviceParameter] = useState<string>("voltage");
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [summary, setSummary] = useState({
+    average: { voltage: "12.8V", current: "1.5A", wattage: "19.2W" },
+    peak: { voltage: "14.5V", current: "2.1A", wattage: "25.9W" }
+  });
 
   const iconMapping: any = {
     voltage: "bolt",
@@ -59,17 +63,68 @@ const SolarStats = () => {
           throw new Error(message);
         }
         const responseData = await response.json();
-        setChartData(responseData.data);
+
+        console.log("Fetched solar chart data:", responseData.data);
+        
+        // Direct assignment - assuming responseData.data.solar is already an array
+        if (Array.isArray(responseData.data.solar)) {
+          setChartData(responseData.data.solar);
+          // Optionally calculate real summary values from the data
+          if (responseData.data.solar.length > 0) {
+            calculateSummary(responseData.data.solar, parameter);
+          }
+        } else {
+          console.error("Solar data is not an array:", responseData.data.solar);
+          setChartData([]);
+        }
       } catch (err: any) {
         console.error("Error fetching solar chart data:", err);
         setError(err.message || "Failed to load solar chart data.");
+        setChartData([]);
       } finally {
         setIsLoading(false);
-        setIsRefreshing(false); // Stop refreshing regardless of success or failure
+        setIsRefreshing(false);
       }
     },
     [user?.selectedDevice, token, API_URL_BASE, abortController]
   );
+
+  // Calculate summary statistics from the data
+  const calculateSummary = (data: any[], parameter: string) => {
+    if (!data || data.length === 0) return;
+    
+    try {
+      // Extract values, filtering out any null/undefined/NaN
+      const values = data
+        .map(item => parseFloat(item.value))
+        .filter(val => !isNaN(val));
+      
+      if (values.length === 0) return;
+      
+      // Calculate average and peak
+      const sum = values.reduce((acc, val) => acc + val, 0);
+      const avg = sum / values.length;
+      const peak = Math.max(...values);
+      
+      // Format with appropriate units
+      const suffix = parameter === "voltage" ? "V" : 
+                    parameter === "current" ? "A" : "W";
+      
+      setSummary(prev => ({
+        ...prev,
+        average: {
+          ...prev.average,
+          [parameter]: `${avg.toFixed(1)}${suffix}`
+        },
+        peak: {
+          ...prev.peak,
+          [parameter]: `${peak.toFixed(1)}${suffix}`
+        }
+      }));
+    } catch (err) {
+      console.error("Error calculating summary:", err);
+    }
+  };
 
   useEffect(() => {
     fetchChartData(deviceTime, deviceParameter);
@@ -177,23 +232,25 @@ const SolarStats = () => {
                     <Text className="text-[#FFD700]">Retry</Text>
                   </TouchableOpacity>
                 </View>
-              ) : chartData?.solar?.length! > 0 ? (
+              ) : chartData.length > 0 ? (
                 <LineGraphDataVisual
                   deviceTime={deviceTime}
                   chartData={chartData}
                   isLoading={isLoading}
-                  isSolarSelected={true}
-                  isDeviceCompostSelected={false}
-                  isDeviceEnergySelected={false}
+                  deviceType="solar"
                   deviceParameter={deviceParameter}
                   getMaxValue={getMaxValue}
                   getYAxisLabelSuffix={getYAxisLabelSuffix}
                   handleParameterChange={handleParameterChange}
+                  title="Solar Output"
                 />
               ) : (
                 <View className="h-[350px] justify-center items-center">
                   <Ionicons name="bar-chart-outline" size={40} color="#666" />
                   <Text className="text-gray-400 mt-2">No Solar Data Available</Text>
+                  <Text className="text-gray-500 text-xs mt-1 max-w-[250px] text-center">
+                    Try changing the time period or parameter, or pull down to refresh.
+                  </Text>
                   <TouchableOpacity
                     onPress={() => fetchChartData(deviceTime, deviceParameter)}
                     className="mt-4 bg-[#FFD700]/20 px-6 py-2 rounded-full"
@@ -244,16 +301,14 @@ const SolarStats = () => {
                 <View className="bg-[#333] rounded-lg p-3 w-[48%]">
                   <Text className="text-gray-400 text-xs">Average</Text>
                   <Text className="text-white text-lg font-bold">
-                    {deviceParameter === "voltage" ? "12.8V" :
-                     deviceParameter === "current" ? "1.5A" : "19.2W"}
+                    {summary.average[deviceParameter as keyof typeof summary.average]}
                   </Text>
                 </View>
 
                 <View className="bg-[#333] rounded-lg p-3 w-[48%]">
                   <Text className="text-gray-400 text-xs">Peak</Text>
                   <Text className="text-white text-lg font-bold">
-                    {deviceParameter === "voltage" ? "14.5V" :
-                     deviceParameter === "current" ? "2.1A" : "25.9W"}
+                    {summary.peak[deviceParameter as keyof typeof summary.peak]}
                   </Text>
                 </View>
               </View>

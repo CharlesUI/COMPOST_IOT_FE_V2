@@ -8,6 +8,7 @@ import {
   PanResponder,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -49,21 +50,25 @@ const Notification = () => {
     loadingUser,
     errorDevice,
     errorUser,
+    deleteViaBody,
     deleteNotification,
   } = useNotifications();
 
   useEffect(() => {
-    if (user?.devices) {
-      updateUser({ ...user, selectedDevice: user.devices[0] });
-    }
     loadNotifications();
   }, [user?.selectedDevice, user?._id]);
 
   const loadNotifications = () => {
+    console.log("User Device and ID", user?.selectedDevice, user?._id);
     if (user?.selectedDevice) {
       fetchDeviceNotifications(user?.selectedDevice);
-      fetchUserNotifications(user?._id);
+      
+      // Fetch user notifications only if user ID exists
+      if (user?._id) {
+        fetchUserNotifications(user?._id);
+      }
     } else if (user?._id) {
+      // If no selected device but user ID exists, only fetch user notifications
       fetchUserNotifications(user?._id);
     }
   };
@@ -84,6 +89,49 @@ const Notification = () => {
     setPreviousNotificationIds(combined.map(n => n._id));
   }, [deviceNotifications, userNotifications]);
 
+  const handleClearAllNotifications = async () => {
+    try {
+      // Check if we have the required user ID
+      if (!user?._id) {
+        console.error("User ID is required to clear notifications");
+        return;
+      }
+
+      // Get the device ID (if selected)
+      const deviceId = user?.selectedDevice || "";
+
+      // Confirm deletion with user
+      Alert.alert(
+        "Clear All Notifications",
+        "Are you sure you want to delete all notifications?",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Clear All",
+            style: "destructive",
+            onPress: async () => {
+              // Call the deleteViaBody function
+              console.log("Deleting all notifications for device:", deviceId, "and user:", user._id);
+              const success = await deleteViaBody(deviceId, user._id!);
+
+              if (success) {
+                // Clear the notifications from state to provide immediate feedback
+                setAllNotifications([]);
+
+                // Optional: show success toast or feedback
+                console.log("All notifications cleared successfully");
+              }
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error("Failed to clear notifications:", error);
+    }
+  };
 
   const handleRemoveNotification = async (id: string) => {
     await deleteNotification(id);
@@ -261,12 +309,25 @@ const Notification = () => {
   const loadingAll = loadingDevice || loadingUser;
   const errorAll = errorDevice || errorUser;
 
+  // Custom empty component for when no device is selected
+  const NoDeviceSelectedComponent = () => (
+    <View style={styles.emptyContainer}>
+      <MaterialIcons name="devices" size={80} color="#666666" style={styles.emptyIcon} />
+      <Text style={styles.emptyTitle}>No device selected</Text>
+      <Text style={styles.emptySubtitle}>
+        Please select a device first to view its notifications.
+      </Text>
+      <Pressable 
+        style={styles.selectDeviceButton}
+        onPress={() => router.push("/")} // Adjust this route to wherever your device selection is
+      >
+        <Text style={styles.selectDeviceText}>Select a Device</Text>
+      </Pressable>
+    </View>
+  );
+
   const ListEmptyComponent = () => (
     <View style={styles.emptyContainer}>
-      {/* <Image 
-        source={require('@/assets/images/empty-notifications.png')} 
-        style={styles.emptyImage}
-      /> */}
       <Text style={styles.emptyTitle}>No notifications yet</Text>
       <Text style={styles.emptySubtitle}>
         When you receive notifications, they'll appear here.
@@ -275,15 +336,51 @@ const Notification = () => {
   );
 
   const ListHeaderComponent = () => (
-    <View style={styles.headerContainer}>
+    <View style={styles.headerRow}>
       <Text style={styles.headerTitle}>Recent</Text>
-      {/* {allNotifications.length > 0 && (
-        <Pressable style={styles.clearAllButton} onPress={() => console.log("Clear all")}>
-          <Text style={styles.clearAllText}>Clear all</Text>
+      {allNotifications.length > 0 && (
+        <Pressable 
+          style={styles.clearAllButton}
+          onPress={handleClearAllNotifications}
+        >
+          <Text style={styles.clearAllText}>Clear All</Text>
         </Pressable>
-      )} */}
+      )}
     </View>
   );
+
+  // Determine what to render in the main content area
+  const renderContent = () => {
+    // If no device is selected (and we're not just showing user notifications)
+    if (!user?.selectedDevice) {
+      return <NoDeviceSelectedComponent />;
+    }
+    
+    // If loading and no notifications to show yet
+    if (loadingAll && allNotifications.length === 0) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#10B04B" />
+          <Text style={styles.loadingText}>Loading notifications...</Text>
+        </View>
+      );
+    }
+    
+    // Otherwise show the notification list
+    return (
+      <FlatList
+        data={allNotifications}
+        renderItem={renderItem}
+        keyExtractor={(item) => item._id}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={ListEmptyComponent}
+        ListHeaderComponent={allNotifications.length > 0 ? ListHeaderComponent : null}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+      />
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -301,25 +398,8 @@ const Notification = () => {
         </Pressable>
       </LinearGradient>
 
-      {/* Notification List */}
-      {loadingAll && allNotifications.length === 0 ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#10B04B" />
-          <Text style={styles.loadingText}>Loading notifications...</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={allNotifications}
-          renderItem={renderItem}
-          keyExtractor={(item) => item._id}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={ListEmptyComponent}
-          ListHeaderComponent={allNotifications.length > 0 ? ListHeaderComponent : null}
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-        />
-      )}
+      {/* Main Content */}
+      {renderContent()}
     </SafeAreaView>
   );
 };
@@ -436,11 +516,9 @@ const styles = StyleSheet.create({
     paddingTop: 120,
     paddingHorizontal: 40,
   },
-  emptyImage: {
-    width: 150,
-    height: 150,
-    marginBottom: 24,
-    opacity: 0.8,
+  emptyIcon: {
+    marginBottom: 20,
+    opacity: 0.7,
   },
   emptyTitle: {
     fontSize: 20,
@@ -453,23 +531,44 @@ const styles = StyleSheet.create({
     color: '#AAAAAA',
     textAlign: 'center',
     lineHeight: 20,
+    marginBottom: 24,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    marginBottom: 12,
   },
   headerTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#CCCCCC',
-    marginBottom: 12,
-    marginLeft: 16,
+    marginBottom: 0, // Changed from 12 to 0 since we're using headerRow
   },
   clearAllButton: {
     paddingVertical: 6,
     paddingHorizontal: 12,
+    backgroundColor: 'rgba(16, 176, 75, 0.1)',
+    borderRadius: 8,
   },
   clearAllText: {
     fontSize: 14,
     color: '#10B04B',
     fontWeight: '500',
   },
+  selectDeviceButton: {
+    backgroundColor: '#10B04B',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  selectDeviceText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  }
 });
 
 export default Notification;

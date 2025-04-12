@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   SafeAreaView,
   Text,
@@ -16,7 +16,6 @@ import HeaderSection from "@/components/HeaderSection";
 import useManageDevices from "@/hooks/useManageDevices";
 import { router } from "expo-router";
 import { useAdmin } from "@/context/AdminContext";
-import { useToast } from "react-native-toast-notifications";
 
 interface DeviceType {
   _id: string;
@@ -40,11 +39,11 @@ const ManageDevices = () => {
   } = useManageDevices();
   const [newDeviceNumber, setNewDeviceNumber] = useState("");
   const { admin, updateAdmin } = useAdmin();
-  const toast = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredDevices, setFilteredDevices] = useState<DeviceType[] | null>();
   const [selectedDevice, setSelectedDevice] = useState<DeviceType | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [deviceNumberToDelete, setDeviceNumberToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (devices) {
@@ -55,14 +54,35 @@ const ManageDevices = () => {
     }
   }, [searchQuery, devices]);
 
+  const closeDeviceDetails = useCallback(() => {
+    setIsModalVisible(false);
+    setSelectedDevice(null);
+  }, []);
+
+  useEffect(() => {
+    if (deviceNumberToDelete && !deletingDeviceId && !deletingError) {
+      Alert.alert(
+        "Success",
+        `Successfully deleted device number ${deviceNumberToDelete}`,
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              closeDeviceDetails();
+              setDeviceNumberToDelete(null);
+            },
+          },
+        ]
+      );
+    } else if (deletingError) {
+      // Optionally handle the error case here if needed
+      setDeviceNumberToDelete(null); // Reset state on error as well
+    }
+  }, [deletingDeviceId, deletingError, deviceNumberToDelete, closeDeviceDetails]);
+
   const openDeviceDetails = (device: DeviceType) => {
     setSelectedDevice(device);
     setIsModalVisible(true);
-  };
-
-  const closeDeviceDetails = () => {
-    setIsModalVisible(false);
-    setSelectedDevice(null);
   };
 
   const handleAddDevice = () => {
@@ -92,7 +112,10 @@ const ManageDevices = () => {
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => deleteDevice(deviceId),
+          onPress: () => {
+            setDeviceNumberToDelete(deviceNumber);
+            deleteDevice(deviceId);
+          },
         },
       ]
     );

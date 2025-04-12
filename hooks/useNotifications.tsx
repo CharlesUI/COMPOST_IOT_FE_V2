@@ -75,8 +75,7 @@ const useNotifications = () => {
       return;
     }
 
-    console.log('FETCHING USER NOTIF', userId);
-    
+    console.log("FETCHING USER NOTIF", userId);
 
     try {
       const response = await fetch(
@@ -102,7 +101,7 @@ const useNotifications = () => {
         setErrorUser("Failed to fetch user notifications");
       }
 
-      console.log("data from fetch user", data)
+      console.log("data from fetch user", data.length);
       setLoadingUser(false);
     } catch (err: any) {
       setErrorUser(err.message);
@@ -111,9 +110,11 @@ const useNotifications = () => {
     }
   };
 
-  const deleteNotification = async (userId: string) => {
+  const deleteNotification = async (id: string) => {
+    // Renamed parameter for clarity
     try {
-      const response = await fetch(`${API_URL_BASE}/notification/${userId}`, {
+      const response = await fetch(`${API_URL_BASE}/notification/${id}`, {
+        // Use the passed id
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -123,14 +124,61 @@ const useNotifications = () => {
 
       if (response.ok) {
         // Update both device and user notifications state
-        setDeviceNotifications((prev: any) =>
-          prev.filter((notification: any) => notification._id !== userId)
+        // --- THIS IS THE CORRECT APPROACH ---
+        setDeviceNotifications(
+          (prev) => prev.filter((notification) => notification._id !== id) // Use the correct id variable
         );
-        setUserNotifications((prev: any) =>
-          prev.filter((notification: any) => notification._id !== userId)
+        setUserNotifications(
+          (prev) => prev.filter((notification) => notification._id !== id) // Use the correct id variable
         );
+        // ------------------------------------
         return true;
       }
+      // Consider throwing an error or returning more specific info on failure
+      console.error(
+        "Failed to delete notification on server:",
+        response.status
+      );
+      return false;
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+      return false;
+    }
+  };
+
+  const deleteViaBody = async (deviceNumber: string, userId: string) => {
+    // Renamed parameter for clarity
+    try {
+      const response = await fetch(
+        `${API_URL_BASE}/notification/deleteAll/${deviceNumber}/${userId}`,
+        {
+          // Use the passed id
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            // Authentication headers
+          },
+          // body: JSON.stringify({
+          //   deviceNumber: deviceNumber,
+          //   userId: userId,
+          // }),
+        }
+      );
+
+      console.log("DELETE ALL SELECTED DEVICE NOTIF", deviceNumber);
+      console.log("DELETE ALL SELECTED DEVICE NOTIF", userId);
+
+      if (response.ok) {
+        // Clear the notifications from state
+        // setDeviceNotifications([]);
+        // setUserNotifications([]);
+        return true;
+      }
+      // Consider throwing an error or returning more specific info on failure
+      console.error(
+        "Failed to delete notification on server:",
+        response.status
+      );
       return false;
     } catch (error) {
       console.error("Error deleting notification:", error);
@@ -148,6 +196,7 @@ const useNotifications = () => {
     errorDevice,
     errorUser,
     deleteNotification,
+    deleteViaBody,
   };
 };
 

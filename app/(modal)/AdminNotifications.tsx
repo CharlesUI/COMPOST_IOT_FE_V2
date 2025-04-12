@@ -9,6 +9,7 @@ import {
   PanResponder,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -66,6 +67,45 @@ const AdminNotifications = () => {
     setRefreshing(true);
     await fetchAllDeviceNotifications();
     setRefreshing(false);
+  };
+
+  const handleClearAllNotifications = () => {
+    Alert.alert(
+      "Clear All Notifications",
+      "Are you sure you want to delete all admin notifications?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Clear All",
+          style: "destructive",
+          onPress: async () => {
+            // Call the deleteViaBody function
+            try {
+              const response = await fetch(`${API_URL_BASE}/admin/clearAllNotifications`, {
+                // Use the passed id
+                method: "DELETE",
+                headers: {
+                  "Content-Type": "application/json",
+                  // Authentication headers
+                },
+              });
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+              const data = await response.json();
+              setAllDeviceNotifications(data.notifications);
+            } catch (e: any) {
+              setError(e.message || "Failed to fetch device notifications.");
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleRemoveNotification = async (id: string) => {
@@ -268,12 +308,12 @@ const AdminNotifications = () => {
   );
 
   const ListHeaderComponent = () => (
-    <View style={styles.headerContainer}>
+    <View style={styles.headerRow}>
       <Text style={styles.headerTitle}>Recent Device Notifications</Text>
-      {allDeviceNotifications.length > 0 && (
+      {allDeviceNotifications.length! > 0 && (
         <Pressable
           style={styles.clearAllButton}
-          onPress={() => console.log("Clear all")}
+          onPress={handleClearAllNotifications}
         >
           <Text style={styles.clearAllText}>Clear all</Text>
         </Pressable>
@@ -285,7 +325,10 @@ const AdminNotifications = () => {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <LinearGradient colors={["#2F2C2C", "#242121"]} style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable
+          onPress={() => router.replace("/(tabs)/AdminDashboard")}
+          style={styles.backButton}
+        >
           <Feather name="arrow-left" size={24} color="white" />
         </Pressable>
         <Text style={styles.headerText}>Device Notifications</Text>
@@ -293,7 +336,7 @@ const AdminNotifications = () => {
       </LinearGradient>
 
       {/* Notification List */}
-      {loading && allDeviceNotifications.length === 0 ? (
+      {loading && allDeviceNotifications.length! === 0 ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#10B04B" />
           <Text style={styles.loadingText}>Loading notifications...</Text>
@@ -313,7 +356,7 @@ const AdminNotifications = () => {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={ListEmptyComponent}
           ListHeaderComponent={
-            allDeviceNotifications.length > 0 ? ListHeaderComponent : null
+            allDeviceNotifications.length! > 0 ? ListHeaderComponent : null
           }
           refreshing={refreshing}
           onRefresh={onRefresh}
@@ -397,11 +440,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerContainer: {
+    // Changed this to match the style in Notification.js
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 6,
-    marginLeft: 16,
   },
   deviceName: {
     fontSize: 16,
@@ -445,15 +488,25 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
   },
+  headerRow: {
+    // Added this style to match Notification.js
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
   headerTitle: {
     fontSize: 16,
     fontWeight: "600",
     color: "#CCCCCC",
-    marginBottom: 12,
+    marginBottom: 0, // Changed from 12 to 0 to align with headerRow usage
   },
   clearAllButton: {
     paddingVertical: 6,
     paddingHorizontal: 12,
+    backgroundColor: "rgba(16, 176, 75, 0.1)", // Added background color for better visual
+    borderRadius: 8, // Added border radius for better visual
   },
   clearAllText: {
     fontSize: 14,

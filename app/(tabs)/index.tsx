@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useCameraPermissions } from "expo-camera"; // Import the hook
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 
 import HeaderSection from "@/components/HeaderSection";
 import { useUser } from "@/context/UserContext";
@@ -52,23 +53,23 @@ const HomePage = () => {
     }
 
     let currentStatus = permission.status;
-    if (currentStatus === 'undetermined') {
-       console.log("Requesting camera permission...");
-       const { status } = await requestPermission();
-       currentStatus = status;
-       console.log("Permission status after request:", currentStatus);
+    if (currentStatus === "undetermined") {
+      console.log("Requesting camera permission...");
+      const { status } = await requestPermission();
+      currentStatus = status;
+      console.log("Permission status after request:", currentStatus);
     }
 
-    if (currentStatus === 'granted') {
+    if (currentStatus === "granted") {
       console.log("Permission granted, navigating to scanner...");
-      router.push('/scanner'); // Navigate to the scanner screen route
+      router.push("/scanner"); // Navigate to the scanner screen route
     } else {
       console.log("Permission denied or not granted:", currentStatus);
       Alert.alert(
-        'Permission Required',
-        'Camera access is needed to scan QR codes. Please enable it in your device settings or grant permission when asked.',
+        "Permission Required",
+        "Camera access is needed to scan QR codes. Please enable it in your device settings or grant permission when asked.",
         [
-          { text: 'OK' },
+          { text: "OK" },
           // Optionally add a button to open settings if using Linking API
         ]
       );
@@ -108,9 +109,11 @@ const HomePage = () => {
       // router.replace("/Statistics");
     } else {
       // Use the error message from the hook if available
-       const errorMessage = addDeviceError || "Failed to add device. It might already be registered or an error occurred.";
-       Alert.alert("Error", errorMessage);
-       setDeviceText(""); // Clear input field on error too
+      const errorMessage =
+        addDeviceError ||
+        "Failed to add device. It might already be registered or an error occurred.";
+      Alert.alert("Error", errorMessage);
+      setDeviceText(""); // Clear input field on error too
     }
   };
 
@@ -120,20 +123,23 @@ const HomePage = () => {
       <HeaderSection headerText="CompostSense" title="Home" />
       <View className="flex-1 p-4">
         {/* ... other components like Title, Info Box ... */}
-         <Text className="text-lg font-semibold text-white mb-4">
-           Compost Statistics
-         </Text>
+        <Text className="text-lg font-semibold text-white mb-4">
+          Compost Statistics
+        </Text>
 
-         {/* Information Box */}
-         <View className="bg-[#3A3A3A] rounded-lg p-4 mb-4 border border-[#4A4A4A]">
-           <Text className="text-white text-justify">
-             Sign in to your CompostSense account and monitor your device. Add devices below using the ID or QR Code.
-           </Text>
-         </View>
+        {/* Information Box */}
+        <View className="bg-[#3A3A3A] rounded-lg p-4 mb-4 border border-[#4A4A4A]">
+          <Text className="text-white text-justify">
+            Sign in to your CompostSense account and monitor your device. Add
+            devices below using the ID or QR Code.
+          </Text>
+        </View>
 
         {/* Add Device Section */}
         <View className="bg-[#3A3A3A] rounded-lg p-4 border border-[#4A4A4A]">
-          <Text className="text-white font-semibold mb-2">Enter Device Number:</Text>
+          <Text className="text-white font-semibold mb-2">
+            Enter Device Number:
+          </Text>
           <TextInput
             placeholder="CMPST*****"
             placeholderTextColor="#777"
@@ -141,21 +147,29 @@ const HomePage = () => {
             onChangeText={setDeviceText}
             className="bg-[#2A2A2A] text-white rounded-lg py-3 px-4 mb-3 border border-[#4A4A4A]"
           />
-          <View className="flex-row space-x-2">
+          <View className="flex-row gap-2">
             {/* Button for Manual Add */}
             <TouchableOpacity
-              // Use the renamed handler for manual input
               onPress={() => handleAddDeviceManual(deviceText)}
-              className={`flex-1 bg-indigo-500 py-3 rounded-lg items-center justify-center ${
-                addingDevice ? 'opacity-70' : '' // Disable based on the hook's loading state
-              }`}
               disabled={addingDevice}
+              className={`flex-1 ${addingDevice ? "opacity-70" : ""}`}
+              style={{ borderRadius: 8 }} // Adding explicit style
             >
-              {addingDevice ? (
-                <ActivityIndicator color="white" />
-              ) : (
-                <Text className="text-white font-semibold text-lg">Monitor Device</Text>
-              )}
+              <LinearGradient
+                colors={["#4F46E5", "#3730A3"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                className="flex-1 py-3 items-center justify-center"
+                style={{ borderRadius: 8 }} // Explicit border radius here
+              >
+                {addingDevice ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text className="text-white font-semibold text-lg">
+                    Monitor Device
+                  </Text>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
 
             {/* Button for QR Scan */}
@@ -163,7 +177,7 @@ const HomePage = () => {
               onPress={handleScanQRCode} // Use the updated handler
               className="bg-[#4A4A4A] p-3 rounded-lg border border-[#5A5A5A] justify-center items-center" // Slightly different style for distinction
             >
-               {/* Increased size slightly */}
+              {/* Increased size slightly */}
               <Ionicons name="qr-code-outline" size={32} color="#E5E7EB" />
             </TouchableOpacity>
           </View>

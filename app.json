@@ -4,7 +4,7 @@
     "slug": "CompostIot",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/ic_launcher.png",
+    "icon": "./assets/images/adaptive-icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -13,7 +13,7 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#000000",
-        "foregroundImage": "./assets/images/ic_launcher.png"
+        "foregroundImage": "./assets/images/adaptive-icon.png"
       },
       "permissions": [
         "android.permission.CAMERA",
@@ -35,7 +35,7 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#000000",
-          "image": "./assets/images/ic_launcher.png",
+          "image": "./assets/images/adaptive-icon.png",
           "imageWidth": 200
         }
       ]
@@ -48,7 +48,7 @@
         "origin": false
       },
       "eas": {
-        "projectId": "293d902f-5a15-4202-aa35-cd405458a422"
+        "projectId": "e1cb85be-8ef1-4235-a725-92a6be2057f9"
       }
     },
     "newArchEnabled": true
