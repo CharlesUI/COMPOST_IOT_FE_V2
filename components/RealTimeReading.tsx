@@ -474,23 +474,23 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
               </Text>
               <Text className="color-white mb-1">
                 Internal Temp:
-                {realTimeData?.compostContainerOne.temperatureIn || 0 < 40
+                {realTimeData?.compostContainerOne.temperatureIn || 0 < 30
                   ? "Too cold"
-                  : realTimeData?.compostContainerOne.temperatureIn || 0 > 65
+                  : realTimeData?.compostContainerOne.temperatureIn || 0 > 70
                   ? "Too hot"
                   : "Optimal"}
               </Text>
               <Text className="color-white mb-1">
                 External Temp:
-                {realTimeData?.compostContainerOne.temperatureOut || 0 < 40
+                {realTimeData?.compostContainerOne.temperatureOut || 0 < 30
                   ? "Too cold"
-                  : realTimeData?.compostContainerOne.temperatureOut || 0 > 65
+                  : realTimeData?.compostContainerOne.temperatureOut || 0 > 70
                   ? "Too hot"
                   : "Optimal"}
               </Text>
               <Text className="color-white mb-1">
                 Moisture:
-                {realTimeData?.compostContainerOne.moisture || 0 < 40
+                {realTimeData?.compostContainerOne.moisture || 0 < 30
                   ? "Too dry"
                   : realTimeData?.compostContainerOne.moisture || 0 > 60
                   ? "Too wet"
@@ -498,7 +498,7 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
               </Text>
               <Text className="color-white">
                 Methane:
-                {realTimeData?.compostContainerOne.methane || 0 > 300
+                {realTimeData?.compostContainerOne.methane || 0 > 500
                   ? "High (action required)"
                   : realTimeData?.compostContainerOne.methane || 0 > 100
                   ? "Moderate"
@@ -555,23 +555,23 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
               </Text>
               <Text className="color-white mb-1">
                 Internal Temp:
-                {realTimeData?.compostContainerTwo.temperatureIn || 0 < 40
+                {realTimeData?.compostContainerTwo.temperatureIn || 0 < 30
                   ? "Too cold"
-                  : realTimeData?.compostContainerTwo.temperatureIn || 0 > 65
+                  : realTimeData?.compostContainerTwo.temperatureIn || 0 > 70
                   ? "Too hot"
                   : "Optimal"}
               </Text>
               <Text className="color-white mb-1">
                 External Temp:
-                {realTimeData?.compostContainerTwo.temperatureOut || 0 < 40
+                {realTimeData?.compostContainerTwo.temperatureOut || 0 < 30
                   ? "Too cold"
-                  : realTimeData?.compostContainerTwo.temperatureOut || 0 > 65
+                  : realTimeData?.compostContainerTwo.temperatureOut || 0 > 70
                   ? "Too hot"
                   : "Optimal"}
               </Text>
               <Text className="color-white mb-1">
                 Moisture:
-                {realTimeData?.compostContainerTwo.moisture || 0 < 40
+                {realTimeData?.compostContainerTwo.moisture || 0 < 30
                   ? "Too dry"
                   : realTimeData?.compostContainerTwo.moisture || 0 > 60
                   ? "Too wet"
@@ -579,7 +579,7 @@ const RealTimeReading = ({ selectedReading, realTimeData }: Props) => {
               </Text>
               <Text className="color-white">
                 Methane:
-                {realTimeData?.compostContainerTwo.methane || 0 > 300
+                {realTimeData?.compostContainerTwo.methane || 0 > 500
                   ? "High (action required)"
                   : realTimeData?.compostContainerTwo.methane || 0 > 100
                   ? "Moderate"

@@ -324,9 +324,9 @@ const AdminSolarStats = () => {
                   </Text>
                 </View>
               </View>
-              <TouchableOpacity className="bg-[#FFD700]/20 py-3 rounded-xl items-center justify-center mt-2">
+              {/* <TouchableOpacity className="bg-[#FFD700]/20 py-3 rounded-xl items-center justify-center mt-2">
                 <Text className="text-[#FFD700] font-medium">Export Data</Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
           </View>
         </View>

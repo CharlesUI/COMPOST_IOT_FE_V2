@@ -239,7 +239,7 @@ const AdminMixedStats = () => {
             onRefresh={onRefresh}
             colors={[activeColor]}
             tintColor={activeColor}
-            title={`Updating ${selectedDataType === 'compost' ? 'Compost' : 'TEG'} Data...`}
+            title={`Updating ${selectedDataType === 'compost' ? 'MIXED' : 'TEG'} Data...`}
           />
         }
       >
@@ -260,7 +260,7 @@ const AdminMixedStats = () => {
                     color={activeColor} />
                </View>
               <Text className="text-white text-lg font-semibold">
-                Admin {selectedDataType === 'compost' ? 'Compost (C2)' : 'TEG (T2)'} Data
+                Admin {selectedDataType === 'compost' ? 'MIXED' : 'TEG'} Data
               </Text>
             </View>
           </LinearGradient>
@@ -277,7 +277,7 @@ const AdminMixedStats = () => {
                 >
                   <FontAwesome5 name="leaf" size={14} color={selectedDataType === "compost" ? activeColor : "#666"} style={{ marginRight: 6 }}/>
                   <Text className={`text-xs font-bold uppercase ${ selectedDataType === "compost" ? "text-white" : "text-gray-400" }`}>
-                    Compost (C2)
+                    MIXED
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -288,7 +288,7 @@ const AdminMixedStats = () => {
                 >
                   <FontAwesome5 name="bolt" size={14} color={selectedDataType === "teg" ? activeColor : "#666"} style={{ marginRight: 6 }}/>
                   <Text className={`text-xs font-bold uppercase ${ selectedDataType === "teg" ? "text-white" : "text-gray-400" }`}>
-                    TEG (T2)
+                    TEG MIXED
                   </Text>
                 </TouchableOpacity>
             </View>
@@ -340,7 +340,7 @@ const AdminMixedStats = () => {
                    getMaxValue={getMaxValue}
                    getYAxisLabelSuffix={getYAxisLabelSuffix}
                    handleParameterChange={handleParameterChange}
-                   title={`Admin ${selectedDataType === 'compost' ? 'Compost (C2)' : 'TEG (T2)'} Trends`}
+                   title={`${selectedDataType === 'compost' ? 'MIXED' : 'TEG'} Data`}
                  />
                ) : (
                  <View className="h-[350px] justify-center items-center p-4">
@@ -405,9 +405,9 @@ const AdminMixedStats = () => {
                   <Text className="text-white text-lg font-bold">{currentPeak}</Text>
                 </View>
               </View>
-              <TouchableOpacity className={`py-3 rounded-xl items-center justify-center mt-2 ${activeBgColor}`}>
+              {/* <TouchableOpacity className={`py-3 rounded-xl items-center justify-center mt-2 ${activeBgColor}`}>
                 <Text style={{ color: activeColor }} className="font-medium">Export Data</Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
           </View>
         </View>

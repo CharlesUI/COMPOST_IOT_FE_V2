@@ -39,7 +39,7 @@ type SummaryState = {
     wattage?: SummaryValues;
 };
 
-const MixedStats = () => {
+const CocoStats = () => {
   const { user, token, abortController } = useUser();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -264,7 +264,7 @@ const MixedStats = () => {
                     color={selectedDataType === 'compost' ? "#10B04B" : "#FFD700"} />
                </View>
               <Text className="text-white text-lg font-semibold">
-                {selectedDataType === 'compost' ? 'Compost Data' : 'TEG Data'}
+                {selectedDataType === 'compost' ? 'COCO Data' : 'TEG Data'}
               </Text>
             </View>
             <TouchableOpacity
@@ -298,7 +298,7 @@ const MixedStats = () => {
                       selectedDataType === "compost" ? "text-white" : "text-gray-400"
                     }`}
                   >
-                    Compost
+                    COCO
                   </Text>
                 </TouchableOpacity>
 
@@ -321,7 +321,7 @@ const MixedStats = () => {
                       selectedDataType === "teg" ? "text-white" : "text-gray-400"
                     }`}
                   >
-                    TEG
+                    TEG COCO
                   </Text>
                 </TouchableOpacity>
             </View>
@@ -380,7 +380,7 @@ const MixedStats = () => {
                   getMaxValue={getMaxValue} // Pass hooks/functions if needed by LineGraphDataVisual
                   getYAxisLabelSuffix={getYAxisLabelSuffix} // Pass hooks/functions if needed
                   handleParameterChange={handleParameterChange} // Pass if LineGraphDataVisual needs to change params itself
-                  title={selectedDataType === 'compost' ? 'Compost Trends' : 'TEG Output'} // Optional: Pass a title
+                  title={selectedDataType === 'compost' ? 'COCO Trends' : 'TEG Output'} // Optional: Pass a title
                   // Removed: isSolarSelected, isDeviceCompostSelected, isDeviceEnergySelected
                 />
               ) : (
@@ -487,12 +487,12 @@ const MixedStats = () => {
                 </View>
               </View>
 
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 className={`py-3 rounded-xl items-center justify-center mt-2 ${selectedDataType === 'compost' ? 'bg-[#10B04B]/20' : 'bg-[#FFD700]/20'}`}
                  // Add export functionality if needed
               >
                  <Text className={`font-medium ${selectedDataType === 'compost' ? 'text-[#10B04B]' : 'text-[#FFD700]'}`}>Export Data</Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
           </View>
         </View>
@@ -501,4 +501,4 @@ const MixedStats = () => {
   );
 };
 
-export default MixedStats;
+export default CocoStats;

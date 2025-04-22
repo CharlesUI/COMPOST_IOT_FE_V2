@@ -436,7 +436,7 @@ const AdminDashboard = () => {
                               color="white"
                             />
                             <Text className="text-white font-medium ml-2">
-                              Compost 1
+                              Coco
                             </Text>
                           </View>
                           {renderStatusIndicator(
@@ -482,7 +482,7 @@ const AdminDashboard = () => {
                               color="white"
                             />
                             <Text className="text-white font-medium ml-2">
-                              Compost 2
+                              Mixed
                             </Text>
                           </View>
                           {renderStatusIndicator(

@@ -324,7 +324,7 @@ const Statistics = () => {
                 </View>
               </View>
 
-              <CustomButton
+              {/* <CustomButton
                 onPress={() => console.log("HELP")}
                 title="HELP"
                 containerStyles={`px-4 py-2 rounded-full ${
@@ -334,7 +334,7 @@ const Statistics = () => {
                   hasDeviceSelected ? "text-[#10B04B]" : "text-gray-500"
                 }`}
                 disabled={!hasDeviceSelected}
-              />
+              /> */}
             </LinearGradient>
           </View>
 
@@ -411,7 +411,7 @@ const Statistics = () => {
           <View className="mx-4 mt-4 mb-6">
             <View className="flex-row justify-between items-center mb-3">
               <Text className="text-white text-lg font-semibold">
-                Real-time Readings
+                Device Readings
               </Text>
               <View className="flex-row items-center">
                 {lastUpdated ? (
@@ -530,7 +530,7 @@ const Statistics = () => {
           </View>
 
           {/* Quick Actions Card */}
-          <View className="mx-4 mb-8">
+          {/* <View className="mx-4 mb-8">
             <Text className="text-white text-lg font-semibold mb-3">
               Quick Actions
             </Text>
@@ -599,7 +599,7 @@ const Statistics = () => {
                 </TouchableOpacity>
               </View>
             </View>
-          </View>
+          </View> */}
         </ScrollView>
       )}
     </SafeAreaView>

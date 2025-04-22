@@ -199,9 +199,9 @@ const LineGraphDataVisual = ({
       rulesThickness: 1,
       rulesType: "dashed",
       rulesColor: "rgba(128, 128, 128, 0.3)",
-      initialSpacing: 50,
+      initialSpacing: 40,
       endSpacing: 10,
-      spacing: 50, // Distance between data points
+      spacing: 40, // Distance between data points
       backgroundColor: "#2F2C2C",
       isAnimated: false,
       animateOnDataChange: false,

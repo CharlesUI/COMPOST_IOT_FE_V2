@@ -258,7 +258,7 @@ const MixedStats = () => {
                     color={selectedDataType === 'compost' ? "#10B04B" : "#FFD700"} />
                </View>
               <Text className="text-white text-lg font-semibold">
-                {selectedDataType === 'compost' ? 'Compost Data (C2)' : 'TEG Data (T2)'} {/* Indicate C2/T2 */}
+                {selectedDataType === 'compost' ? 'MIXED Data' : 'TEG Data'} {/* Indicate C2/T2 */}
               </Text>
             </View>
             <TouchableOpacity
@@ -292,7 +292,7 @@ const MixedStats = () => {
                       selectedDataType === "compost" ? "text-white" : "text-gray-400"
                     }`}
                   >
-                    Compost (C2) {/* Indicate C2 */}
+                    Mixed {/* Indicate C2 */}
                   </Text>
                 </TouchableOpacity>
 
@@ -315,7 +315,7 @@ const MixedStats = () => {
                       selectedDataType === "teg" ? "text-white" : "text-gray-400"
                     }`}
                   >
-                    TEG (T2) {/* Indicate T2 */}
+                    TEG Mixed {/* Indicate T2 */}
                   </Text>
                 </TouchableOpacity>
             </View>
@@ -377,7 +377,7 @@ const MixedStats = () => {
                   getMaxValue={getMaxValue}
                   getYAxisLabelSuffix={getYAxisLabelSuffix}
                   handleParameterChange={handleParameterChange} // Pass if needed
-                  title={selectedDataType === 'compost' ? 'Compost Trends (C2)' : 'TEG Output (T2)'} // Dynamic Title
+                  title={selectedDataType === 'compost' ? 'Mixed Trends' : 'TEG Output'} // Dynamic Title
                 />
               ) : (
                 <View className="h-[350px] justify-center items-center p-4">
@@ -480,12 +480,12 @@ const MixedStats = () => {
                 </View>
               </View>
 
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 className={`py-3 rounded-xl items-center justify-center mt-2 ${selectedDataType === 'compost' ? 'bg-[#10B04B]/20' : 'bg-[#FFD700]/20'}`}
                  // Add export functionality if needed
               >
                  <Text className={`font-medium ${selectedDataType === 'compost' ? 'text-[#10B04B]' : 'text-[#FFD700]'}`}>Export Data</Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
           </View>
         </View>
